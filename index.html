@@ -457,6 +457,28 @@
     font-size: 12px;
     color: var(--text-dim);
   }
+  .goal-unit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .goal-unit-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    flex: 0 0 auto;
+  }
+  .goal-unit-select {
+    flex: 1;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    min-width: 0;
+  }
+  .goal-unit-select:disabled { opacity: 0.5; }
   .goal-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -614,6 +636,10 @@
     <span class="filter-label">카테고리</span>
     <div class="filter-cat-toggle" id="filterCatToggle"></div>
   </div>
+  <div class="filter-row">
+    <span class="filter-label">서열등급</span>
+    <div class="filter-cat-toggle" id="filterGradeToggle"></div>
+  </div>
   <div class="filter-footer">
     <span class="filter-status" id="filterStatus"></span>
     <button class="btn-ghost btn-small" id="filterResetBtn">필터 초기화</button>
@@ -639,6 +665,12 @@
     <div class="goal-header">
       <span class="goal-title">목표 뽑기</span>
       <button class="btn-primary btn-small" id="goalRollBtn" disabled>목표 뽑기</button>
+    </div>
+    <div class="goal-unit-row">
+      <label for="unitSelect" class="goal-unit-label">내 단위</label>
+      <select id="unitSelect" class="goal-unit-select" disabled>
+        <option value="">단위 데이터를 불러오는 중...</option>
+      </select>
     </div>
     <div class="goal-hint" id="goalHint">곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.</div>
     <div class="goal-grid" id="goalGrid" style="display:none;">
@@ -689,6 +721,8 @@
   // 다른 시트로 바꿔볼 수 있고, 일반 사용자에게는 설정 화면이 노출되지 않는다.
   const FIXED_SHEET_ID = '1yz7bsPZrjUzCPubB-2gJbksWnlL65bbd';
   const FIXED_SHEET_GID = '1323631796';
+  const UNIT_GOAL_GID = '1528033618';       // 단위목표설정 (초단~10단)
+  const RANK_UNIT_GOAL_GID = '1431514067';  // 인단위목표설정 (현인~달인)
   const IS_ADMIN = new URLSearchParams(window.location.search).get('admin') === '1';
 
   const STORAGE_KEY = 'taikoRandom:sheetConfigV2';
@@ -712,6 +746,7 @@
     levelMinSelect: document.getElementById('levelMinSelect'),
     levelMaxSelect: document.getElementById('levelMaxSelect'),
     filterCatToggle: document.getElementById('filterCatToggle'),
+    filterGradeToggle: document.getElementById('filterGradeToggle'),
     filterStatus: document.getElementById('filterStatus'),
     filterResetBtn: document.getElementById('filterResetBtn'),
     stage: document.getElementById('stage'),
@@ -726,6 +761,7 @@
     historyList: document.getElementById('historyList'),
     clearHistoryBtn: document.getElementById('clearHistoryBtn'),
     goalRollBtn: document.getElementById('goalRollBtn'),
+    unitSelect: document.getElementById('unitSelect'),
     goalHint: document.getElementById('goalHint'),
     goalGrid: document.getElementById('goalGrid'),
     goalPlayValue: document.getElementById('goalPlayValue'),
@@ -739,11 +775,12 @@
   let history = [];        // 뽑은 기록
   let lastDrawnGoalContext = null; // 가장 최근 뽑힌 곡의 목표 뽑기용 난이도 정보 {isLevel10, grade}
 
-  // 필터 상태: 레벨 범위 + 선택된 카테고리 집합(비어있으면 전체 허용)
+  // 필터 상태: 레벨 범위 + 선택된 카테고리 집합 + 선택된 서열등급 집합(비어있으면 전체 허용)
   const filterState = {
     levelMin: 1,
     levelMax: 10,
     categories: new Set(),
+    grades: new Set(),
   };
   const FILTER_KEY = 'taikoRandom:filterState';
 
@@ -753,6 +790,7 @@
         levelMin: filterState.levelMin,
         levelMax: filterState.levelMax,
         categories: Array.from(filterState.categories),
+        grades: Array.from(filterState.grades),
       }));
     } catch (e) {}
   }
@@ -765,64 +803,315 @@
     } catch (e) { return null; }
   }
 
-  // ── 목표 뽑기: 등급별 가/불가 범위 ───────────────────────
-  // "명인~초인(국내 상위 20위권)" 실력자가 4플레이 이내에 도전한다고 가정.
-  // 9레벨 이하는 풀콤보 고정, 가는 0~19 중 하나.
-  // 10레벨은 서열등급에 따라 가/불가 범위가 넓어진다.
-  //   상 이하(하/중하/중/중상/상) : 가 0~19,  불가 0~1
-  //   최상                      : 가 0~30,  불가 0~1
-  //   최상+                     : 가 0~30,  불가 0~1
-  //   졸업                      : 가 0~40,  불가 0~5
-  //   졸업+                     : 가 0~50,  불가 0~5
-  function goalRangeForGrade(isLevel10, grade) {
-    if (!isLevel10) {
-      return { missMax: 19, clearMax: 0 }; // 9레벨 이하: 항상 풀콤보, 가 0~19
+  // ══════════════════════════════════════════════════════════
+  // 목표 뽑기 시스템 (단위도장 기반)
+  // ══════════════════════════════════════════════════════════
+  //
+  // 데이터 소스: 구글 시트의 "단위목표설정"(초단~10단) / "인단위목표설정"(현인~달인) 탭.
+  // 각 단위는 "적합격"(최소 기준)과 "금합격"(완벽 수행) 두 값을 가지며,
+  // 사용자는 "적OO단"과 "금OO단"을 각각 독립된 선택지로 고를 수 있다.
+  //
+  // 인증 레벨(범위)은 실전 체감 기준으로 다음과 같이 겹쳐 있다:
+  //   초단·2단=6~7, 3단·4단=7~8, 5단·6단=8, 7단·8단=8~9, 9단=9, 10단=10
+  // 인단위(현인~달인)는 "미만"(3곡 기준보다 쉬움) / "3곡"(정확히 인증 기준) 두 값만 사용.
+
+  let unitGoalRows = [];      // 시트 "단위목표설정" 원본 행
+  let rankUnitGoalRows = [];  // 시트 "인단위목표설정" 원본 행
+  let selectedUnitKey = null; // 사용자가 고른 단위 키 (예: '9단', '금9단', '명인', '금현인')
+
+  // 단위 순서 (계단 방향, 쉬움→어려움). 인증레벨범위는 시트에서 그대로 읽어온다.
+  const UNIT_ORDER = ['초단', '2단', '3단', '4단', '5단', '6단', '7단', '8단', '9단', '10단(1곡)', '10단(2곡)', '10단(3곡)'];
+  const RANK_UNIT_ORDER = ['현인', '명인', '초인', '달인'];
+
+  // 클리어 모드 발동 기준: 선택 단위별로 "이 이상이면 완주만 목표로 전환"하는 경계.
+  // levelGate: 레벨(숫자) 기준. rankGate: 10레벨 내 서열등급 기준(7~10단, 10단, 현인, 명인에 적용).
+  const CLEAR_MODE_GATE = {
+    '초단': { levelGate: 9 }, '2단': { levelGate: 9 }, '3단': { levelGate: 9 }, '4단': { levelGate: 9 },
+    '5단': { levelGate: 10 }, '6단': { levelGate: 10 },
+    '7단': { levelGate: 10, rankGate: '중' },
+    '8단': { levelGate: 10, rankGate: '중상' },
+    '9단': { levelGate: 10, rankGate: '상' },
+    '10단(1곡)': { levelGate: 10, rankGate: '최상' },
+    '10단(2곡)': { levelGate: 10, rankGate: '최상' },
+    '10단(3곡)': { levelGate: 10, rankGate: '최상' },
+    '현인': { rankGate: '졸업' },
+    '명인': { rankGate: '졸업+', rankGateInclusiveOnly: true }, // 명인은 "졸업+일 때만" 클리어모드
+    '초인': null, // 클리어 모드 없음
+    '달인': null,
+  };
+
+  const GRADE_ORDER = ['하', '중하', '중', '중상', '상', '최상', '최상+', '졸업', '졸업+'];
+  function gradeIndex(g) { return GRADE_ORDER.indexOf(g); }
+
+  async function fetchSheetRows(sheetId, gid) {
+    const url = buildCsvUrl(sheetId, gid);
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`시트 요청 실패 (HTTP ${res.status})`);
+    const csv = await res.text();
+    const rows = parseCsv(csv);
+    let dataRows = rows;
+    if (dataRows.length && looksLikeHeader(dataRows[0][0])) dataRows = dataRows.slice(1);
+    return dataRows.filter((r) => r && r[0]);
+  }
+
+  // 단위목표설정: 단위, 인증레벨범위, 적합격가, 금합격가, 적합격불가, 금합격불가
+  function parseUnitGoalRows(rows) {
+    return rows.map((r) => ({
+      unit: (r[0] || '').trim(),
+      levelRange: (r[1] || '').trim(),
+      missPass: Number(r[2]),
+      missGold: Number(r[3]),
+      clearPass: Number(r[4]),
+      clearGold: Number(r[5]),
+    }));
+  }
+
+  // 인단위목표설정: 단위, 구분(3곡/미만), 기준등급, 적합격가, 금합격가, 적합격불가, 금합격불가
+  function parseRankUnitGoalRows(rows) {
+    return rows.map((r) => ({
+      unit: (r[0] || '').trim(),
+      kind: (r[1] || '').trim(), // '3곡' | '미만'
+      baseGrade: (r[2] || '').trim(),
+      missPass: Number(r[3]),
+      missGold: Number(r[4]),
+      clearPass: Number(r[5]),
+      clearGold: Number(r[6]),
+    }));
+  }
+
+  async function loadUnitGoalSheets(sheetId) {
+    try {
+      const [unitRows, rankRows] = await Promise.all([
+        fetchSheetRows(sheetId, UNIT_GOAL_GID),
+        fetchSheetRows(sheetId, RANK_UNIT_GOAL_GID),
+      ]);
+      unitGoalRows = parseUnitGoalRows(unitRows);
+      rankUnitGoalRows = parseRankUnitGoalRows(rankRows);
+      buildUnitSelect();
+    } catch (err) {
+      console.error('단위 목표 시트 로딩 실패:', err);
     }
-    switch (grade) {
-      case '최상':
-      case '최상+':
-        return { missMax: 30, clearMax: 1 };
-      case '졸업':
-        return { missMax: 40, clearMax: 5 };
-      case '졸업+':
-        return { missMax: 50, clearMax: 10 };
-      default: // 상 이하 (하/중하/중/중상/상) 또는 등급 정보 없음
-        return { missMax: 19, clearMax: 1 };
+  }
+
+  function findUnitRow(unitName) {
+    return unitGoalRows.find((u) => u.unit === unitName) || null;
+  }
+  function findRankUnitRow(unitName, kind) {
+    return rankUnitGoalRows.find((u) => u.unit === unitName && u.kind === kind) || null;
+  }
+
+  // ── 단위 선택 UI 구성 ────────────────────────────────────
+  function buildUnitSelect() {
+    if (!els.unitSelect) return;
+    const groups = [];
+
+    if (unitGoalRows.length) {
+      const opts1 = [];
+      UNIT_ORDER.forEach((u) => {
+        if (!findUnitRow(u)) return;
+        opts1.push(`<option value="적:${u}">${u}</option>`);
+        opts1.push(`<option value="금:${u}">금${u}</option>`);
+      });
+      if (opts1.length) groups.push(`<optgroup label="초단~10단">${opts1.join('')}</optgroup>`);
     }
+    if (rankUnitGoalRows.length) {
+      const opts2 = [];
+      RANK_UNIT_ORDER.forEach((u) => {
+        if (!findRankUnitRow(u, '3곡')) return;
+        opts2.push(`<option value="적:${u}">${u}</option>`);
+        opts2.push(`<option value="금:${u}">금${u}</option>`);
+      });
+      if (opts2.length) groups.push(`<optgroup label="현인~달인">${opts2.join('')}</optgroup>`);
+    }
+
+    if (!groups.length) {
+      els.unitSelect.innerHTML = '<option value="">단위 데이터 없음</option>';
+      els.unitSelect.disabled = true;
+      return;
+    }
+    els.unitSelect.innerHTML = `<option value="">단위를 선택하세요</option>${groups.join('')}`;
+    els.unitSelect.disabled = false;
+
+    const savedUnit = loadSelectedUnit();
+    if (savedUnit) {
+      els.unitSelect.value = savedUnit;
+      selectedUnitKey = savedUnit || null;
+    }
+  }
+
+  function saveSelectedUnit(key) {
+    try { localStorage.setItem('taikoRandom:selectedUnit', key || ''); } catch (e) {}
+  }
+  function loadSelectedUnit() {
+    try { return localStorage.getItem('taikoRandom:selectedUnit') || ''; } catch (e) { return ''; }
+  }
+
+  // ── 뽑힌 곡의 난이도를 "단위 인증 기준"과 비교 ───────────
+  // 반환: 'same' | 'easier' | 'harder' | 'clear'
+  // 시트의 baseGrade("10상", "10최상" 등)에서 앞의 "10"을 떼고 순수 등급명만 추출
+  function normalizeBaseGrade(raw) {
+    return (raw || '').replace(/^10/, '').trim();
+  }
+
+  function classifySongAgainstUnit(unitType, unitName, songLevel, songGrade) {
+    const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
+
+    if (isRankUnit) {
+      const gate = CLEAR_MODE_GATE[unitName];
+      if (songLevel < 10) return 'easier'; // 인단위는 항상 10레벨 대상, 그보다 쉬우면 '미만' 취급
+      // 10레벨 곡: 서열등급 비교
+      const rankRow3 = findRankUnitRow(unitName, '3곡');
+      const baseGrade = rankRow3 ? normalizeBaseGrade(rankRow3.baseGrade) : null;
+      if (gate) {
+        if (gate.rankGateInclusiveOnly) {
+          if (songGrade === gate.rankGate) return 'clear';
+        } else if (gate.rankGate && songGrade && gradeIndex(songGrade) >= gradeIndex(gate.rankGate)) {
+          return 'clear';
+        }
+      }
+      if (baseGrade && songGrade === baseGrade) return 'same';
+      if (baseGrade && songGrade && gradeIndex(songGrade) < gradeIndex(baseGrade)) return 'easier';
+      return 'harder'; // 인단위는 '한단계 어려움' 개념이 없으니 harder는 사실상 안 씀(clear가 대부분 흡수)
+    }
+
+    // 초단~10단 계열
+    const row = findUnitRow(unitName);
+    if (!row) return 'same';
+    const gate = CLEAR_MODE_GATE[unitName];
+
+    // 클리어 모드 체크 (레벨 게이트 + 등급 게이트)
+    // - 등급 게이트가 없는 단위(초단~6단): 레벨이 levelGate "이상"이면 클리어
+    // - 등급 게이트가 있는 단위(7~10단): 레벨이 levelGate를 "초과"하면 무조건 클리어,
+    //   레벨이 levelGate와 "같으면" 서열등급으로 별도 판단
+    if (gate) {
+      if (gate.rankGate) {
+        if (songLevel > gate.levelGate) return 'clear';
+        if (songLevel === gate.levelGate && songGrade && gradeIndex(songGrade) >= gradeIndex(gate.rankGate)) {
+          return 'clear';
+        }
+      } else {
+        if (songLevel >= gate.levelGate) return 'clear';
+      }
+    }
+
+    // 인증 레벨 범위 파싱 (예: "6-7", "8", "10")
+    const range = row.levelRange.split('-').map(Number);
+    const rMin = range[0];
+    const rMax = range.length > 1 ? range[1] : range[0];
+
+    if (songLevel >= rMin && songLevel <= rMax) return 'same';
+    if (songLevel < rMin) return 'easier';
+    return 'harder'; // 한 단계 위 (클리어 게이트에 안 걸린 애매한 어려움)
+  }
+
+  // ── 상황별 가/불가 범위 산출 ──────────────────────────────
+  function computeGoalRange(unitType, unitName, situation) {
+    const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
+
+    if (isRankUnit) {
+      if (situation === 'harder') {
+        // 3곡 값을 "적합격/금합격" 기준값처럼 취급해서 초단~9단과 동일한 어려움 공식을 적용
+        const row3 = findRankUnitRow(unitName, '3곡');
+        if (!row3) return null;
+        const missPass = row3.missPass, missGold = row3.missGold, clearPass = row3.clearPass, clearGold = row3.clearGold;
+        if (unitType === '적') {
+          return { missMin: missPass, missMax: missPass * 2, clearMin: clearGold, clearMax: clearPass * 2 };
+        }
+        return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: clearGold, clearMax: clearPass * 2 };
+      }
+      const kind = situation === 'easier' ? '미만' : '3곡';
+      const row = findRankUnitRow(unitName, kind);
+      if (!row) return null;
+      const miss = unitType === '금' ? row.missGold : row.missPass;
+      const clear = unitType === '금' ? row.clearGold : row.clearPass;
+      // 인단위 미만/3곡은 표 값 그대로(고정값) 반환
+      return { missMin: miss, missMax: miss, clearMin: clear, clearMax: clear, fixed: true };
+    }
+
+    const row = findUnitRow(unitName);
+    if (!row) return null;
+    const { missPass, missGold, clearPass, clearGold } = row;
+
+    if (unitType === '적') {
+      switch (situation) {
+        case 'same':   return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
+        case 'easier': return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
+        case 'harder': return { missMin: missPass, missMax: missPass * 2, clearMin: clearGold, clearMax: clearPass * 2 };
+      }
+    } else { // 금단위
+      switch (situation) {
+        case 'same':   return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
+        case 'easier': {
+          // 다음 단위의 적합격 ~ 현재 금단위가
+          const nextName = nextUnitName(unitName);
+          const nextRow = nextName ? findUnitRow(nextName) : null;
+          const nextMissPass = nextRow ? nextRow.missPass : missGold;
+          return { missMin: nextMissPass, missMax: missGold, clearMin: 0, clearMax: clearGold };
+        }
+        case 'harder': return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: clearGold, clearMax: clearPass * 2 };
+      }
+    }
+    return null;
+  }
+
+  function nextUnitName(unitName) {
+    const idx = UNIT_ORDER.indexOf(unitName);
+    if (idx === -1 || idx === UNIT_ORDER.length - 1) return null;
+    return UNIT_ORDER[idx + 1];
   }
 
   function pickPlayCount() {
-    // 1~4플레이, 거의 균등
-    return 1 + Math.floor(Math.random() * 4);
+    return 1 + Math.floor(Math.random() * 4); // 1~4플레이, 거의 균등
   }
 
-  // 0~max(포함) 사이의 정수를 균등 랜덤으로 뽑는다.
-  function pickIntInRange(max) {
-    return Math.floor(Math.random() * (max + 1));
+  // min~max(포함) 사이의 정수를 균등 랜덤으로 뽑는다. min>max인 경우 방어적으로 스왑.
+  function pickIntInRangeMinMax(min, max) {
+    if (min > max) { const t = min; min = max; max = t; }
+    return min + Math.floor(Math.random() * (max - min + 1));
   }
+
+  const SITUATION_LABEL = {
+    same: '이 단위에 정확히 맞는 난이도',
+    easier: '이 단위보다 쉬운 곡',
+    harder: '이 단위보다 어려운 곡',
+    clear: '이 단위로는 도전 자체가 목표인 곡',
+  };
 
   function rollGoal() {
-    if (!lastDrawnGoalContext) return;
-    const { isLevel10, grade } = lastDrawnGoalContext;
-    const { missMax, clearMax } = goalRangeForGrade(isLevel10, grade);
+    if (!lastDrawnGoalContext || !selectedUnitKey) return;
+    const [unitType, unitName] = selectedUnitKey.split(':');
+    const { songLevel, songGrade } = lastDrawnGoalContext;
 
+    const situation = classifySongAgainstUnit(unitType, unitName, songLevel, songGrade);
     const playCount = pickPlayCount();
-    const missCount = pickIntInRange(missMax);
-    const clearCount = pickIntInRange(clearMax);
 
     els.goalGrid.style.display = 'grid';
-    els.goalPlayValue.textContent = `${playCount}플레이 이내`;
-    els.goalMissValue.textContent = `가 ${missCount}개 이내`;
-    els.goalClearValue.textContent = clearCount === 0 ? '풀콤보' : `불가 ${clearCount}개 이내`;
 
-    // 각 항목에 pop-in 애니메이션을 다시 재생시킴
+    if (situation === 'clear') {
+      els.goalPlayValue.textContent = `${playCount}플레이 이내`;
+      els.goalMissValue.textContent = '-';
+      els.goalClearValue.textContent = '클리어';
+      els.goalHint.textContent = `${SITUATION_LABEL.clear}. 완주(클리어) 자체가 목표입니다. 다시 누르면 새로운 목표가 나옵니다.`;
+    } else {
+      const range = computeGoalRange(unitType, unitName, situation);
+      if (!range) {
+        els.goalHint.textContent = '이 단위의 목표 데이터를 찾지 못했습니다.';
+        return;
+      }
+      const missCount = pickIntInRangeMinMax(Math.floor(range.missMin), Math.floor(range.missMax));
+      const clearCount = pickIntInRangeMinMax(Math.floor(range.clearMin), Math.floor(range.clearMax));
+
+      els.goalPlayValue.textContent = `${playCount}플레이 이내`;
+      els.goalMissValue.textContent = `가 ${missCount}개 이내`;
+      els.goalClearValue.textContent = clearCount === 0 ? '풀콤보' : `불가 ${clearCount}개 이내`;
+      els.goalHint.textContent = `${SITUATION_LABEL[situation]}. 다시 누르면 새로운 목표가 나옵니다.`;
+    }
+
     document.querySelectorAll('.goal-item').forEach((el) => {
       el.classList.remove('pop-in');
       void el.offsetWidth;
       el.classList.add('pop-in');
     });
-
-    els.goalHint.textContent = '다시 누르면 새로운 목표가 나옵니다.';
   }
 
   function setStatus(msg, kind) {
@@ -996,6 +1285,25 @@
     return song.categories.some((c) => filterState.categories.has(c));
   }
 
+  // 서열등급 필터: 오니/우라 중 "레벨 필터를 만족하는 난이도"의 서열등급이 선택 집합에 포함되면 통과.
+  // 어려움(hard) 모드는 서열등급 개념이 없으므로 항상 통과시킨다.
+  function matchesGradeFilter(song, mode) {
+    if (filterState.grades.size === 0) return true; // 선택 없음 = 전체 허용
+    if (mode === 'hard') return true;
+
+    const min = filterState.levelMin;
+    const max = filterState.levelMax;
+    const oniN = Number(song.oniLevel);
+    const oniInLevelRange = song.oniLevel !== '' && oniN >= min && oniN <= max;
+    const uraN = Number(song.uraLevel);
+    const uraInLevelRange = song.hasUra && song.uraLevel !== '' && uraN >= min && uraN <= max;
+
+    const oniGradeOk = oniInLevelRange && song.oniRank && filterState.grades.has(song.oniRank);
+    const uraGradeOk = uraInLevelRange && song.uraRank && filterState.grades.has(song.uraRank);
+    // 서열등급 정보가 비어있는 곡(oniRank/uraRank가 '')은, 등급 필터가 걸려있으면 제외한다.
+    return oniGradeOk || uraGradeOk;
+  }
+
   function poolIndices(mode) {
     const idxs = [];
     allSongs.forEach((s, i) => {
@@ -1005,6 +1313,7 @@
       if (!hasBaseLevel) return;
       if (!matchesLevelFilter(s, mode)) return;
       if (!matchesCategoryFilter(s)) return;
+      if (!matchesGradeFilter(s, mode)) return;
       idxs.push(i);
     });
     return idxs;
@@ -1016,8 +1325,8 @@
     }
     // oniura 모드: 우라가 있으면 오니/우라 중 랜덤 택1, 없으면 오니.
     // 단, 레벨 필터가 걸려있으면 필터 범위를 만족하는 난이도만 후보로 삼는다.
-    const oniInRange = song.oniLevel !== '' && matchesSingleLevel(song.oniLevel, mode);
-    const uraInRange = song.hasUra && song.uraLevel !== '' && matchesSingleLevel(song.uraLevel, mode);
+    const oniInRange = song.oniLevel !== '' && matchesSingleLevel(song.oniLevel, mode, song.oniRank);
+    const uraInRange = song.hasUra && song.uraLevel !== '' && matchesSingleLevel(song.uraLevel, mode, song.uraRank);
 
     if (oniInRange && uraInRange) {
       const useUra = Math.random() < 0.5;
@@ -1028,10 +1337,13 @@
     return { diffKey: 'oni', level: song.oniLevel, rank: song.oniRank };
   }
 
-  function matchesSingleLevel(level, mode) {
+  function matchesSingleLevel(level, mode, grade) {
     if (mode === 'hard') return true; // hard 모드는 이 함수를 쓰지 않지만 안전하게 처리
     const n = Number(level);
-    return n >= filterState.levelMin && n <= filterState.levelMax;
+    const levelOk = n >= filterState.levelMin && n <= filterState.levelMax;
+    if (!levelOk) return false;
+    if (filterState.grades.size === 0) return true;
+    return !!grade && filterState.grades.has(grade);
   }
 
   // ── 렌더링 ───────────────────────────────────────────────
@@ -1129,6 +1441,37 @@
     '팝': '--cat-pop',
   };
 
+  // 서열등급 배경색 (기존 카드 배지 색상과 통일: 어려움=진녹, 오니=핑크, 우라=보라 계열과는 별개로
+  // 등급 자체의 상대적 난이도를 은은하게 구분하기 위해 회색 계열 톤 차이만 준다)
+  const GRADE_FILTER_KEYS = ['하', '중하', '중', '중상', '상', '최상', '최상+', '졸업', '졸업+', '개인차'];
+
+  // 서열등급 필터 토글 버튼을 최초 1회 생성
+  function buildGradeFilterButtons() {
+    if (!els.filterGradeToggle) return;
+    els.filterGradeToggle.innerHTML = GRADE_FILTER_KEYS.map((key) => `
+      <button type="button" class="filter-cat-btn" data-grade="${key}">
+        ${escapeHtml(key)}
+      </button>
+    `).join('');
+
+    els.filterGradeToggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.grade;
+        if (filterState.grades.has(key)) filterState.grades.delete(key);
+        else filterState.grades.add(key);
+        btn.classList.toggle('active', filterState.grades.has(key));
+        applyFilterChange();
+      });
+    });
+  }
+
+  function syncGradeButtonsUi() {
+    if (!els.filterGradeToggle) return;
+    els.filterGradeToggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
+      btn.classList.toggle('active', filterState.grades.has(btn.dataset.grade));
+    });
+  }
+
   // 카테고리 필터 토글 버튼을 최초 1회 생성
   function buildCategoryFilterButtons() {
     els.filterCatToggle.innerHTML = CATEGORY_KEYS.map((key) => {
@@ -1181,6 +1524,9 @@
     if (filterState.categories.size > 0) {
       parts.push(`카테고리 ${filterState.categories.size}개 선택`);
     }
+    if (filterState.grades.size > 0) {
+      parts.push(`서열등급 ${filterState.grades.size}개 선택`);
+    }
     els.filterStatus.textContent = parts.join(' · ');
   }
 
@@ -1205,8 +1551,10 @@
     filterState.levelMin = 1;
     filterState.levelMax = currentPoolMode === 'hard' ? 8 : 10;
     filterState.categories.clear();
+    filterState.grades.clear();
     buildLevelSelectOptions(currentPoolMode);
     syncCategoryButtonsUi();
+    syncGradeButtonsUi();
     applyFilterChange();
   }
 
@@ -1256,6 +1604,7 @@
       setStatus(`연결됨 · ${songs.length}곡`, 'ok');
       showConnectedUi();
       setPoolMode(currentPoolMode);
+      loadUnitGoalSheets(sheetId); // 같은 시트의 "단위목표설정"/"인단위목표설정" 탭도 함께 로딩
 
       if (!opts.silent) els.settingsPanel.style.display = 'none';
     } catch (err) {
@@ -1304,14 +1653,16 @@
       const song = allSongs[songIdx];
       const diffInfo = resolveDrawnDifficulty(song, currentPoolMode);
 
-      // 목표 뽑기가 참조할 난이도 정보 계산.
-      // 서열등급(rank)이 있으면 그걸로 10레벨 여부와 등급을 정확히 판단하고,
-      // 없으면 레벨 숫자만으로 근사한다(9이하=false, 10인데 등급 없음=상 이하 취급).
-      {
+      // 목표 뽑기가 참조할 난이도 정보 계산 (오니/우라 기준일 때만 유효).
+      // 어려움(hard) 난이도로 뽑힌 경우, 단위도장 목표 체계와 성격이 달라 목표 뽑기를 비활성화한다.
+      if (diffInfo.diffKey === 'hard') {
+        lastDrawnGoalContext = null;
+      } else {
         const n = Number(diffInfo.level);
-        const isLevel10 = diffInfo.diffKey !== 'hard' && Number.isFinite(n) && n >= 10;
-        const grade = isLevel10 ? (diffInfo.rank || null) : null;
-        lastDrawnGoalContext = { isLevel10, grade };
+        lastDrawnGoalContext = {
+          songLevel: Number.isFinite(n) ? n : 0,
+          songGrade: diffInfo.rank || null,
+        };
       }
 
       history.unshift({
@@ -1331,10 +1682,18 @@
       if (existingCard) existingCard.remove();
       document.querySelector('.result-wrap').insertAdjacentHTML('beforeend', renderSongCard(song, diffInfo));
 
-      // 새 곡이 뽑히면 이전 목표는 리셋하고, 목표 뽑기 버튼을 활성화
+      // 새 곡이 뽑히면 이전 목표는 리셋하고, 조건이 맞을 때만 목표 뽑기 버튼을 활성화
       els.goalGrid.style.display = 'none';
-      els.goalRollBtn.disabled = false;
-      els.goalHint.textContent = '방금 뽑힌 곡 난이도에 맞는 목표를 뽑아보세요.';
+      if (lastDrawnGoalContext && selectedUnitKey) {
+        els.goalRollBtn.disabled = false;
+        els.goalHint.textContent = '방금 뽑힌 곡 난이도에 맞는 목표를 뽑아보세요.';
+      } else if (!selectedUnitKey) {
+        els.goalRollBtn.disabled = true;
+        els.goalHint.textContent = '먼저 "내 단위"를 선택해주세요.';
+      } else {
+        els.goalRollBtn.disabled = true;
+        els.goalHint.textContent = '어려움 난이도는 목표 뽑기를 지원하지 않습니다. 오니/우라 풀에서 뽑아주세요.';
+      }
 
       renderPoolCount();
       renderHistory();
@@ -1375,6 +1734,19 @@
   els.resetPoolBtn.addEventListener('click', resetPool);
   els.clearHistoryBtn.addEventListener('click', clearHistory);
   els.goalRollBtn.addEventListener('click', rollGoal);
+  els.unitSelect.addEventListener('change', () => {
+    selectedUnitKey = els.unitSelect.value || null;
+    saveSelectedUnit(selectedUnitKey || '');
+    // 단위를 바꾸면 이전 목표는 무효화되므로 다시 뽑게 유도
+    els.goalGrid.style.display = 'none';
+    if (lastDrawnGoalContext && selectedUnitKey) {
+      els.goalRollBtn.disabled = false;
+      els.goalHint.textContent = '방금 뽑힌 곡 난이도에 맞는 목표를 뽑아보세요.';
+    } else if (!selectedUnitKey) {
+      els.goalRollBtn.disabled = true;
+      els.goalHint.textContent = '먼저 "내 단위"를 선택해주세요.';
+    }
+  });
 
   els.poolOniUraBtn.addEventListener('click', () => setPoolMode('oniura'));
   els.poolHardBtn.addEventListener('click', () => setPoolMode('hard'));
@@ -1406,16 +1778,19 @@
     els.poolHardBtn.classList.toggle('active', currentPoolMode === 'hard');
 
     buildCategoryFilterButtons();
+    buildGradeFilterButtons();
     const savedFilter = loadFilterState();
     if (savedFilter) {
       filterState.levelMin = savedFilter.levelMin || 1;
       filterState.levelMax = savedFilter.levelMax || (currentPoolMode === 'hard' ? 8 : 10);
       filterState.categories = new Set(savedFilter.categories || []);
+      filterState.grades = new Set(savedFilter.grades || []);
     } else {
       filterState.levelMax = currentPoolMode === 'hard' ? 8 : 10;
     }
     buildLevelSelectOptions(currentPoolMode);
     syncCategoryButtonsUi();
+    syncGradeButtonsUi();
     renderFilterStatus();
 
     if (IS_ADMIN) {
