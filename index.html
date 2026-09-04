@@ -491,7 +491,12 @@
     font-family: inherit;
     font-weight: 600;
   }
-  .unit-type-btn.active {
+  .unit-type-btn.active[data-unit-type="적"] {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+  }
+  .unit-type-btn.active[data-unit-type="금"] {
     background: var(--gold);
     color: #1a1408;
     border-color: var(--gold);
@@ -1022,8 +1027,6 @@
     }
 
     // 초단~10단 계열
-    const row = findUnitRow(unitName);
-    if (!row) return 'same';
     const gate = CLEAR_MODE_GATE[unitName];
 
     // 클리어 모드 체크 (레벨 게이트 + 등급 게이트)
@@ -1042,6 +1045,8 @@
     }
 
     // 10단은 숫자 레벨 범위가 아니라 "10중상" 단일 등급이 인증 기준이다.
+    // (시트에는 '10단'이라는 이름의 행이 없고 '10단(1곡)'/'10단(3곡)'만 있으므로,
+    //  findUnitRow('10단')을 시도하기 전에 반드시 이 분기에서 먼저 처리해야 한다.)
     if (unitName === '10단') {
       if (songLevel < 10) return 'easier';
       if (!songGrade) return 'same'; // 등급 정보가 없으면 인증 기준과 같은 것으로 취급
@@ -1050,6 +1055,9 @@
       if (cmp < 0) return 'easier';
       return 'harder';
     }
+
+    const row = findUnitRow(unitName);
+    if (!row) return 'same';
 
     // 인증 레벨 범위 파싱 (예: "6-7", "8", "10")
     const range = row.levelRange.split('-').map(Number);
@@ -1076,13 +1084,19 @@
         }
         return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: clearGold, clearMax: clearPass * 2 };
       }
+
+      // same(3곡 기준)/easier(미만 기준) 모두, 그 행의 적합격/금합격을 초단~9단과 동일한 공식에 대입한다.
       const kind = situation === 'easier' ? '미만' : '3곡';
       const row = findRankUnitRow(unitName, kind);
       if (!row) return null;
-      const miss = unitType === '금' ? row.missGold : row.missPass;
-      const clear = unitType === '금' ? row.clearGold : row.clearPass;
-      // 인단위 미만/3곡은 표 값 그대로(고정값) 반환
-      return { missMin: miss, missMax: miss, clearMin: clear, clearMax: clear, fixed: true };
+      const { missPass, missGold, clearPass, clearGold } = row;
+      if (unitType === '적') {
+        if (situation === 'same') return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
+        return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold }; // easier
+      }
+      // 금단위: same은 금×1~2, easier는 미만 행의 금~적 그대로 사용(더 참조할 하위 인단위가 없으므로)
+      if (situation === 'same') return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
+      return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold }; // easier
     }
 
     // 10단은 시트에 "10단(1곡)"/"10단(3곡)" 두 행으로 존재한다.
