@@ -1122,10 +1122,10 @@
 
     if (isRankUnit) {
       if (situation === 'very_easy') {
-        // 매우쉬움: 적/금 구분 없이 0 ~ 미만행의 적합격 사이 (하한이 0이라는 점이 '쉬움'과의 차이)
+        // 매우쉬움: 적/금 구분 없이 가는 0~미만행 적합격, 불가는 0~미만행 금합격불가
         const rowMi = findRankUnitRow(unitName, '미만');
         if (!rowMi) return null;
-        return { missMin: 0, missMax: rowMi.missPass, clearMin: 0, clearMax: rowMi.clearPass };
+        return { missMin: 0, missMax: rowMi.missPass, clearMin: 0, clearMax: rowMi.clearGold };
       }
       if (situation === 'harder') {
         // 3곡 값을 "적합격/금합격" 기준값처럼 취급해서 초단~9단과 동일한 어려움 공식을 적용
@@ -1144,19 +1144,19 @@
       if (!row) return null;
       const { missPass, missGold, clearPass, clearGold } = row;
       if (situation === 'same') {
-        if (unitType === '적') return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
-        return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
+        if (unitType === '적') return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearPass };
+        return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
       }
-      // easier: 적/금 동일하게 금합격~적합격 (쉬움 공식 단순화)
+      // easier: 적/금 동일하게 가는 금합격~적합격, 불가는 0~금합격불가
       return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
     }
 
-    // 매우쉬움: 적/금 구분 없이 0 ~ 적합격 사이 (초단~10단 계열)
+    // 매우쉬움: 적/금 구분 없이 가는 0~적합격, 불가는 0~금합격불가 (초단~10단 계열)
     if (situation === 'very_easy') {
       const lookupUnitName = unitName === '10단' ? '10단(1곡)' : unitName;
       const row = findUnitRow(lookupUnitName);
       if (!row) return null;
-      return { missMin: 0, missMax: row.missPass, clearMin: 0, clearMax: row.clearPass };
+      return { missMin: 0, missMax: row.missPass, clearMin: 0, clearMax: row.clearGold };
     }
 
     // 10단은 시트에 "10단(1곡)"/"10단(3곡)" 두 행으로 존재한다.
@@ -1170,11 +1170,11 @@
     const { missPass, missGold, clearPass, clearGold } = row;
 
     if (situation === 'same') {
-      if (unitType === '적') return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
-      return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
+      if (unitType === '적') return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearPass };
+      return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
     }
     if (situation === 'easier') {
-      // 적/금 동일하게 금합격~적합격 (쉬움 공식 단순화)
+      // 적/금 동일하게 가는 금합격~적합격, 불가는 0~금합격불가
       return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
     }
     if (situation === 'harder') {
