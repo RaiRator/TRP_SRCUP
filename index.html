@@ -234,6 +234,15 @@
     background: rgba(255,255,255,0.06);
   }
 
+  /* 레벨(1~10) 토글은 숫자 하나뿐이라 알약 모양 대신 살짝 둥근 정사각형에 가깝게 조정 */
+  #filterLevelToggle .filter-cat-btn {
+    min-width: 38px;
+    justify-content: center;
+    padding: 8px 0;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
   .filter-footer {
     display: flex;
     align-items: center;
@@ -603,6 +612,7 @@
     .goal-grid { grid-template-columns: 1fr; }
     .filter-row { flex-direction: column; align-items: flex-start; }
     .filter-label { min-width: 0; }
+    #filterLevelToggle .filter-cat-btn { min-height: 40px; min-width: 40px; padding: 0; }
   }
 </style>
 </head>
@@ -874,6 +884,14 @@
   const GRADE_ORDER = ['하', '중하', '중', '중상', '상', '최상', '최상+', '졸업', '졸업+'];
   function gradeIndex(g) { return GRADE_ORDER.indexOf(g); }
 
+  // "매우쉬움" 경계: 이 레벨(포함) 이하로 뽑히면, 쉬움보다 한 단계 더 낮춰서
+  // 적/금 구분 없이 0 ~ 적합격 사이의 훨씬 관대한 범위로 목표를 잡는다.
+  // 초단~7단은 이 단계 자체가 없다(그보다 훨씬 쉬운 곡을 만날 일이 사실상 없거나 의미가 없음).
+  const VERY_EASY_THRESHOLD = {
+    '8단': 6, '9단': 6, '10단': 7,
+    '현인': 8, '명인': 8, '초인': 9, '달인': 9,
+  };
+
   async function fetchSheetRows(sheetId, gid) {
     const url = buildCsvUrl(sheetId, gid);
     const res = await fetch(url, { cache: 'no-store' });
@@ -1007,10 +1025,15 @@
 
   function classifySongAgainstUnit(unitType, unitName, songLevel, songGrade) {
     const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
+    const veryEasyThreshold = VERY_EASY_THRESHOLD[unitName];
 
     if (isRankUnit) {
       const gate = CLEAR_MODE_GATE[unitName];
-      if (songLevel < 10) return 'easier'; // 인단위는 항상 10레벨 대상, 그보다 쉬우면 '미만' 취급
+      if (songLevel < 10) {
+        // 인단위는 항상 10레벨이 인증 기준. 그보다 쉬우면 매우쉬움 경계로 다시 나눈다.
+        if (veryEasyThreshold != null && songLevel <= veryEasyThreshold) return 'very_easy';
+        return 'easier';
+      }
       // 10레벨 곡: 서열등급 비교
       const rankRow3 = findRankUnitRow(unitName, '3곡');
       const baseGrade = rankRow3 ? normalizeBaseGrade(rankRow3.baseGrade) : null;
@@ -1048,7 +1071,10 @@
     // (시트에는 '10단'이라는 이름의 행이 없고 '10단(1곡)'/'10단(3곡)'만 있으므로,
     //  findUnitRow('10단')을 시도하기 전에 반드시 이 분기에서 먼저 처리해야 한다.)
     if (unitName === '10단') {
-      if (songLevel < 10) return 'easier';
+      if (songLevel < 10) {
+        if (veryEasyThreshold != null && songLevel <= veryEasyThreshold) return 'very_easy';
+        return 'easier';
+      }
       if (!songGrade) return 'same'; // 등급 정보가 없으면 인증 기준과 같은 것으로 취급
       const cmp = gradeIndex(songGrade) - gradeIndex('중상');
       if (cmp === 0) return 'same';
@@ -1065,7 +1091,10 @@
     const rMax = range.length > 1 ? range[1] : range[0];
 
     if (songLevel >= rMin && songLevel <= rMax) return 'same';
-    if (songLevel < rMin) return 'easier';
+    if (songLevel < rMin) {
+      if (veryEasyThreshold != null && songLevel <= veryEasyThreshold) return 'very_easy';
+      return 'easier';
+    }
     return 'harder'; // 한 단계 위 (클리어 게이트에 안 걸린 애매한 어려움)
   }
 
@@ -1074,6 +1103,12 @@
     const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
 
     if (isRankUnit) {
+      if (situation === 'very_easy') {
+        // 매우쉬움: 적/금 구분 없이 0 ~ 미만행의 적합격 사이 (하한이 0이라는 점이 '쉬움'과의 차이)
+        const rowMi = findRankUnitRow(unitName, '미만');
+        if (!rowMi) return null;
+        return { missMin: 0, missMax: rowMi.missPass, clearMin: 0, clearMax: rowMi.clearPass };
+      }
       if (situation === 'harder') {
         // 3곡 값을 "적합격/금합격" 기준값처럼 취급해서 초단~9단과 동일한 어려움 공식을 적용
         const row3 = findRankUnitRow(unitName, '3곡');
@@ -1090,13 +1125,20 @@
       const row = findRankUnitRow(unitName, kind);
       if (!row) return null;
       const { missPass, missGold, clearPass, clearGold } = row;
-      if (unitType === '적') {
-        if (situation === 'same') return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
-        return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold }; // easier
+      if (situation === 'same') {
+        if (unitType === '적') return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
+        return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
       }
-      // 금단위: same은 금×1~2, easier는 미만 행의 금~적 그대로 사용(더 참조할 하위 인단위가 없으므로)
-      if (situation === 'same') return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
-      return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold }; // easier
+      // easier: 적/금 동일하게 금합격~적합격 (쉬움 공식 단순화)
+      return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
+    }
+
+    // 매우쉬움: 적/금 구분 없이 0 ~ 적합격 사이 (초단~10단 계열)
+    if (situation === 'very_easy') {
+      const lookupUnitName = unitName === '10단' ? '10단(1곡)' : unitName;
+      const row = findUnitRow(lookupUnitName);
+      if (!row) return null;
+      return { missMin: 0, missMax: row.missPass, clearMin: 0, clearMax: row.clearPass };
     }
 
     // 10단은 시트에 "10단(1곡)"/"10단(3곡)" 두 행으로 존재한다.
@@ -1109,37 +1151,19 @@
     if (!row) return null;
     const { missPass, missGold, clearPass, clearGold } = row;
 
-    if (unitType === '적') {
-      switch (situation) {
-        case 'same':   return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
-        case 'easier': return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
-        case 'harder': return { missMin: missPass, missMax: missPass * 2, clearMin: clearGold, clearMax: clearPass * 2 };
-      }
-    } else { // 금단위
-      switch (situation) {
-        case 'same':   return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
-        case 'easier': {
-          // 다음 단위의 적합격 ~ 현재 금단위가.
-          // 단, 10단은 더 이상 참조할 다음 단위가 없으므로(1곡 표 자체가 이미 최하단),
-          // 자기 자신(10단 1곡)의 적합격~금합격을 그대로 범위로 사용한다.
-          if (unitName === '10단') {
-            return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
-          }
-          const nextName = nextUnitName(unitName) === '10단' ? '10단(1곡)' : nextUnitName(unitName);
-          const nextRow = nextName ? findUnitRow(nextName) : null;
-          const nextMissPass = nextRow ? nextRow.missPass : missGold;
-          return { missMin: nextMissPass, missMax: missGold, clearMin: 0, clearMax: clearGold };
-        }
-        case 'harder': return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: clearGold, clearMax: clearPass * 2 };
-      }
+    if (situation === 'same') {
+      if (unitType === '적') return { missMin: missGold, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearGold };
+      return { missMin: missGold, missMax: missGold * 2, clearMin: 0, clearMax: clearGold };
+    }
+    if (situation === 'easier') {
+      // 적/금 동일하게 금합격~적합격 (쉬움 공식 단순화)
+      return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
+    }
+    if (situation === 'harder') {
+      if (unitType === '적') return { missMin: missPass, missMax: missPass * 2, clearMin: clearGold, clearMax: clearPass * 2 };
+      return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: clearGold, clearMax: clearPass * 2 };
     }
     return null;
-  }
-
-  function nextUnitName(unitName) {
-    const idx = UNIT_ORDER.indexOf(unitName);
-    if (idx === -1 || idx === UNIT_ORDER.length - 1) return null;
-    return UNIT_ORDER[idx + 1];
   }
 
   function pickPlayCount() {
@@ -1155,6 +1179,7 @@
   const SITUATION_LABEL = {
     same: '이 단위에 정확히 맞는 난이도',
     easier: '이 단위보다 쉬운 곡',
+    very_easy: '이 단위보다 매우 쉬운 곡',
     harder: '이 단위보다 어려운 곡',
     clear: '이 단위로는 도전 자체가 목표인 곡',
   };
