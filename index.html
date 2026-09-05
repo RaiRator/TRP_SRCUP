@@ -289,6 +289,163 @@
     color: var(--text-dim);
   }
 
+  /* ── 커스텀 선곡풀 진입 행 (필터 패널 상단) ───────────── */
+  .custom-pool-row {
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 14px;
+  }
+  .custom-pool-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .custom-pool-status {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .custom-pool-status.active {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* ── 커스텀 선곡풀 전체 화면 패널 ─────────────────────── */
+  .custom-pool-panel {
+    width: 100%;
+    max-width: 640px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .custom-pool-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .custom-pool-header h2 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 800;
+  }
+  .custom-pool-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .custom-pool-picked {
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .custom-pool-picked-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .custom-pool-picked-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .custom-pool-empty {
+    color: var(--text-dim);
+    font-size: 12px;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .custom-pool-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  .custom-pool-item .title { flex: 1; font-weight: 600; word-break: keep-all; }
+  .custom-pool-item .remove-btn {
+    flex: 0 0 auto;
+    background: transparent;
+    border: none;
+    color: var(--red);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+
+  .custom-pool-search {
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+  }
+
+  .custom-pool-browse-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+  }
+  .custom-pool-browse-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--panel-alt);
+  }
+  .custom-pool-browse-item .title { flex: 1; font-weight: 600; word-break: keep-all; }
+  .custom-pool-browse-item .title-kr { font-size: 11px; color: var(--text-dim); margin-left: 6px; }
+  .custom-pool-browse-item .cat-dot-mini { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+  .custom-pool-browse-item .add-btn {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid var(--blue);
+    background: transparent;
+    color: var(--blue);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+  }
+  .custom-pool-browse-item.added .add-btn {
+    border-color: var(--picked);
+    color: var(--picked);
+  }
+  .custom-pool-browse-empty {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 20px 0;
+  }
+
   /* ── 메인 뽑기 스테이지 ───────────────────────────── */
   .stage {
     width: 100%;
@@ -709,30 +866,60 @@
 </div>
 
 <div class="filter-panel" id="filterPanel" style="display:none;">
-  <div class="filter-row">
-    <span class="filter-label">난이도</span>
-    <div class="filter-cat-toggle" id="filterLevelToggle"></div>
+  <div class="filter-row custom-pool-row">
+    <span class="filter-label">곡 선택 방식</span>
+    <div class="custom-pool-toggle-wrap">
+      <span class="custom-pool-status" id="customPoolStatus">필터로 선택 중</span>
+      <button class="btn-ghost btn-small" id="openCustomPoolBtn">🎵 커스텀 선곡풀 만들기</button>
+    </div>
   </div>
-  <div class="filter-row" id="filterGrade8Row" style="display:none;">
-    <span class="filter-label">8렙 서열등급</span>
-    <div class="filter-cat-toggle" id="filterGrade8Toggle"></div>
+  <div id="normalFilterFields">
+    <div class="filter-row">
+      <span class="filter-label">난이도</span>
+      <div class="filter-cat-toggle" id="filterLevelToggle"></div>
+    </div>
+    <div class="filter-row" id="filterGrade8Row" style="display:none;">
+      <span class="filter-label">8렙 서열등급</span>
+      <div class="filter-cat-toggle" id="filterGrade8Toggle"></div>
+    </div>
+    <div class="filter-row" id="filterGrade9Row" style="display:none;">
+      <span class="filter-label">9렙 서열등급</span>
+      <div class="filter-cat-toggle" id="filterGrade9Toggle"></div>
+    </div>
+    <div class="filter-row" id="filterGrade10Row" style="display:none;">
+      <span class="filter-label">10렙 서열등급</span>
+      <div class="filter-cat-toggle" id="filterGrade10Toggle"></div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">카테고리</span>
+      <div class="filter-cat-toggle" id="filterCatToggle"></div>
+    </div>
+    <div class="filter-footer">
+      <span class="filter-status" id="filterStatus"></span>
+      <button class="btn-ghost btn-small" id="filterResetBtn">필터 초기화</button>
+    </div>
   </div>
-  <div class="filter-row" id="filterGrade9Row" style="display:none;">
-    <span class="filter-label">9렙 서열등급</span>
-    <div class="filter-cat-toggle" id="filterGrade9Toggle"></div>
+</div>
+
+<div class="custom-pool-panel" id="customPoolPanel" style="display:none;">
+  <div class="custom-pool-header">
+    <h2>커스텀 선곡풀</h2>
+    <button class="btn-primary btn-small" id="applyCustomPoolBtn">적용하고 돌아가기</button>
   </div>
-  <div class="filter-row" id="filterGrade10Row" style="display:none;">
-    <span class="filter-label">10렙 서열등급</span>
-    <div class="filter-cat-toggle" id="filterGrade10Toggle"></div>
+  <p class="custom-pool-desc">전체 곡 중 원하는 곡만 하나씩 담아서, 그 곡들 안에서만 랜덤으로 뽑히게 합니다. 검색하거나 목록을 훑어보면서 담아보세요.</p>
+
+  <div class="custom-pool-picked" id="customPoolPickedWrap">
+    <div class="custom-pool-picked-header">
+      <span id="customPoolPickedCount">담은 곡 0개</span>
+      <button class="btn-ghost btn-small" id="clearCustomPoolBtn">전체 비우기</button>
+    </div>
+    <div class="custom-pool-picked-list" id="customPoolPickedList">
+      <div class="custom-pool-empty">아직 담은 곡이 없습니다.</div>
+    </div>
   </div>
-  <div class="filter-row">
-    <span class="filter-label">카테고리</span>
-    <div class="filter-cat-toggle" id="filterCatToggle"></div>
-  </div>
-  <div class="filter-footer">
-    <span class="filter-status" id="filterStatus"></span>
-    <button class="btn-ghost btn-small" id="filterResetBtn">필터 초기화</button>
-  </div>
+
+  <input type="text" id="customPoolSearchInput" class="custom-pool-search" placeholder="곡 이름 검색 (원곡명 또는 한국어명)" />
+  <div class="custom-pool-browse-list" id="customPoolBrowseList"></div>
 </div>
 
 <div class="stage" id="stage" style="display:none;">
@@ -839,6 +1026,16 @@
     poolOniUraBtn: document.getElementById('poolOniUraBtn'),
     poolHardBtn: document.getElementById('poolHardBtn'),
     filterPanel: document.getElementById('filterPanel'),
+    normalFilterFields: document.getElementById('normalFilterFields'),
+    customPoolStatus: document.getElementById('customPoolStatus'),
+    openCustomPoolBtn: document.getElementById('openCustomPoolBtn'),
+    customPoolPanel: document.getElementById('customPoolPanel'),
+    applyCustomPoolBtn: document.getElementById('applyCustomPoolBtn'),
+    customPoolPickedCount: document.getElementById('customPoolPickedCount'),
+    customPoolPickedList: document.getElementById('customPoolPickedList'),
+    clearCustomPoolBtn: document.getElementById('clearCustomPoolBtn'),
+    customPoolSearchInput: document.getElementById('customPoolSearchInput'),
+    customPoolBrowseList: document.getElementById('customPoolBrowseList'),
     filterLevelToggle: document.getElementById('filterLevelToggle'),
     filterGrade8Row: document.getElementById('filterGrade8Row'),
     filterGrade8Toggle: document.getElementById('filterGrade8Toggle'),
@@ -904,6 +1101,31 @@
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       return parsed;
+    } catch (e) { return null; }
+  }
+
+  // ── 커스텀 선곡풀: 곡 이름으로 직접 골라 담은 목록만으로 뽑기 ─
+  // 활성화되어 있으면 기존 레벨/카테고리/서열등급 필터 대신 이 목록만 대상으로 삼는다.
+  // 난이도(오니/우라)는 뽑을 때 기존과 동일하게 자동 결정(우라 있으면 랜덤 택1).
+  const customPoolState = {
+    active: false,
+    titles: new Set(), // 담긴 곡의 titleJp 집합 (곡명이 곧 고유 키)
+  };
+  const CUSTOM_POOL_KEY = 'taikoRandom:customPool';
+
+  function saveCustomPoolState() {
+    try {
+      localStorage.setItem(CUSTOM_POOL_KEY, JSON.stringify({
+        active: customPoolState.active,
+        titles: Array.from(customPoolState.titles),
+      }));
+    } catch (e) {}
+  }
+  function loadCustomPoolState() {
+    try {
+      const raw = localStorage.getItem(CUSTOM_POOL_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
     } catch (e) { return null; }
   }
 
@@ -1473,6 +1695,19 @@
 
   function poolIndices(mode) {
     const idxs = [];
+    // 커스텀 선곡풀이 활성화되어 있으면, 담긴 곡들 중 이 모드(오니우라/어려움)에서
+    // 실제로 뽑을 수 있는 난이도가 있는 곡만 대상으로 삼는다. 기존 필터는 적용하지 않는다.
+    if (customPoolState.active && customPoolState.titles.size > 0) {
+      allSongs.forEach((s, i) => {
+        if (!customPoolState.titles.has(s.titleJp)) return;
+        const hasBaseLevel = mode === 'hard'
+          ? s.hardLevel !== ''
+          : (s.oniLevel !== '' || (s.hasUra && s.uraLevel !== ''));
+        if (!hasBaseLevel) return;
+        idxs.push(i);
+      });
+      return idxs;
+    }
     allSongs.forEach((s, i) => {
       const hasBaseLevel = mode === 'hard'
         ? s.hardLevel !== ''
@@ -1489,6 +1724,16 @@
     if (mode === 'hard') {
       return { diffKey: 'hard', level: song.hardLevel, rank: '' };
     }
+    // 커스텀 선곡풀 모드에서는 레벨/등급 필터를 무시하고, 우라가 있으면 그대로 랜덤 택1.
+    if (customPoolState.active && customPoolState.titles.size > 0) {
+      if (song.hasUra && song.uraLevel !== '' && song.oniLevel !== '') {
+        const useUra = Math.random() < 0.5;
+        if (useUra) return { diffKey: 'ura', level: song.uraLevel, rank: song.uraRank };
+        return { diffKey: 'oni', level: song.oniLevel, rank: song.oniRank };
+      }
+      if (song.hasUra && song.uraLevel !== '') return { diffKey: 'ura', level: song.uraLevel, rank: song.uraRank };
+      return { diffKey: 'oni', level: song.oniLevel, rank: song.oniRank };
+    }
     // oniura 모드: 우라가 있으면 오니/우라 중 랜덤 택1, 없으면 오니.
     // 단, 필터가 걸려있으면 필터를 만족하는 난이도만 후보로 삼는다.
     const oniInRange = song.oniLevel !== '' && matchesDifficultyFilter(song.oniLevel, song.oniRank);
@@ -1501,6 +1746,116 @@
     }
     if (uraInRange) return { diffKey: 'ura', level: song.uraLevel, rank: song.uraRank };
     return { diffKey: 'oni', level: song.oniLevel, rank: song.oniRank };
+  }
+
+  // ── 커스텀 선곡풀 화면 ───────────────────────────────────
+  function renderCustomPoolStatus() {
+    if (customPoolState.active && customPoolState.titles.size > 0) {
+      els.customPoolStatus.textContent = `커스텀 선곡풀 사용 중 · ${customPoolState.titles.size}곡`;
+      els.customPoolStatus.classList.add('active');
+      els.normalFilterFields.style.display = 'none';
+      els.openCustomPoolBtn.textContent = '🎵 커스텀 선곡풀 수정';
+    } else {
+      els.customPoolStatus.textContent = '필터로 선택 중';
+      els.customPoolStatus.classList.remove('active');
+      els.normalFilterFields.style.display = 'block';
+      els.openCustomPoolBtn.textContent = '🎵 커스텀 선곡풀 만들기';
+    }
+  }
+
+  function renderCustomPoolPickedList() {
+    const titles = Array.from(customPoolState.titles);
+    els.customPoolPickedCount.textContent = `담은 곡 ${titles.length}개`;
+    if (titles.length === 0) {
+      els.customPoolPickedList.innerHTML = '<div class="custom-pool-empty">아직 담은 곡이 없습니다.</div>';
+      return;
+    }
+    els.customPoolPickedList.innerHTML = titles.map((t) => `
+      <div class="custom-pool-item">
+        <span class="title">${escapeHtml(t)}</span>
+        <button type="button" class="remove-btn" data-title="${escapeHtml(t)}" aria-label="빼기">×</button>
+      </div>
+    `).join('');
+    els.customPoolPickedList.querySelectorAll('.remove-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        customPoolState.titles.delete(btn.dataset.title);
+        saveCustomPoolState();
+        renderCustomPoolPickedList();
+        renderCustomPoolBrowseList();
+      });
+    });
+  }
+
+  function renderCustomPoolBrowseList() {
+    const keyword = (els.customPoolSearchInput.value || '').trim().toLowerCase();
+    let list = allSongs;
+    if (keyword) {
+      list = allSongs.filter((s) =>
+        s.titleJp.toLowerCase().includes(keyword) ||
+        (s.titleKr && s.titleKr.toLowerCase().includes(keyword))
+      );
+    }
+    // 목록이 너무 길면 브라우저 부담이 크니, 검색어 없을 때는 앞부분만 우선 보여주고
+    // 스크롤 탐색이 필요하면 계속 아래로 더 로드하는 대신, 전체를 다 넣되 가상 스크롤 없이도
+    // 무난한 곡 수(약 1300~1500) 정도는 실제로 렌더링해도 괜찮은 수준이라 그대로 렌더링한다.
+    if (list.length === 0) {
+      els.customPoolBrowseList.innerHTML = '<div class="custom-pool-browse-empty">검색 결과가 없습니다.</div>';
+      return;
+    }
+    els.customPoolBrowseList.innerHTML = list.map((s) => {
+      const added = customPoolState.titles.has(s.titleJp);
+      const catCls = categoryClass(displayCategoryFor(s));
+      return `
+        <div class="custom-pool-browse-item${added ? ' added' : ''}">
+          <span class="cat-dot-mini ${catCls}"></span>
+          <span class="title">${escapeHtml(s.titleJp)}${s.titleKr ? `<span class="title-kr">${escapeHtml(s.titleKr)}</span>` : ''}</span>
+          <button type="button" class="add-btn" data-title="${escapeHtml(s.titleJp)}">${added ? '담음 ✓' : '담기'}</button>
+        </div>
+      `;
+    }).join('');
+    els.customPoolBrowseList.querySelectorAll('.add-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const title = btn.dataset.title;
+        if (customPoolState.titles.has(title)) customPoolState.titles.delete(title);
+        else customPoolState.titles.add(title);
+        saveCustomPoolState();
+        renderCustomPoolPickedList();
+        renderCustomPoolBrowseList();
+      });
+    });
+  }
+
+  function openCustomPoolScreen() {
+    els.filterPanel.style.display = 'none';
+    els.stage.style.display = 'none';
+    els.historyPanel.style.display = 'none';
+    els.customPoolPanel.style.display = 'flex';
+    renderCustomPoolPickedList();
+    renderCustomPoolBrowseList();
+  }
+
+  function closeCustomPoolScreen() {
+    els.customPoolPanel.style.display = 'none';
+    els.filterPanel.style.display = 'flex';
+    els.stage.style.display = 'flex';
+    els.historyPanel.style.display = 'block';
+
+    // 곡을 하나라도 담았으면 자동으로 커스텀 풀 활성화, 아니면 기존 필터 방식으로 복귀
+    customPoolState.active = customPoolState.titles.size > 0;
+    saveCustomPoolState();
+    renderCustomPoolStatus();
+
+    remainingIdx = poolIndices(currentPoolMode).slice();
+    renderPoolCount();
+    els.resultEmpty.style.display = 'block';
+    const existingCard = document.querySelector('.result-wrap .song-card');
+    if (existingCard) existingCard.remove();
+    els.drumHint.textContent = '버튼을 눌러 곡을 뽑아보세요.';
+
+    lastDrawnGoalContext = null;
+    els.goalGrid.style.display = 'none';
+    els.goalRollBtn.disabled = true;
+    els.goalHint.textContent = '곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.';
   }
 
   // ── 렌더링 ───────────────────────────────────────────────
@@ -1988,6 +2343,16 @@
 
   els.filterResetBtn.addEventListener('click', resetFilters);
 
+  els.openCustomPoolBtn.addEventListener('click', openCustomPoolScreen);
+  els.applyCustomPoolBtn.addEventListener('click', closeCustomPoolScreen);
+  els.clearCustomPoolBtn.addEventListener('click', () => {
+    customPoolState.titles.clear();
+    saveCustomPoolState();
+    renderCustomPoolPickedList();
+    renderCustomPoolBrowseList();
+  });
+  els.customPoolSearchInput.addEventListener('input', renderCustomPoolBrowseList);
+
   // ── 초기화 ───────────────────────────────────────────────
   (function init() {
     history = loadHistory();
@@ -2017,6 +2382,13 @@
     syncGrade9ButtonsUi();
     syncGrade10ButtonsUi();
     renderFilterStatus();
+
+    const savedCustomPool = loadCustomPoolState();
+    if (savedCustomPool) {
+      customPoolState.titles = new Set(savedCustomPool.titles || []);
+      customPoolState.active = !!savedCustomPool.active && customPoolState.titles.size > 0;
+    }
+    renderCustomPoolStatus();
 
     if (IS_ADMIN) {
       // 관리자 모드(?admin=1): 설정 버튼을 노출하고, 이전에 관리자가 지정해둔 시트가 있으면 그걸 사용.
