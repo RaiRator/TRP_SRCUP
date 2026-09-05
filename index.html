@@ -83,6 +83,32 @@
   h1 span { color: var(--red); }
   .header-actions { display: flex; align-items: center; gap: 10px; }
 
+  .lang-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px;
+  }
+  .lang-btn {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .lang-btn:active { transform: scale(0.94); }
+  .lang-btn.active {
+    background: var(--blue);
+    color: #fff;
+  }
+
   .social-links {
     width: 100%;
     max-width: 640px;
@@ -896,8 +922,13 @@
 <body>
 
 <header>
-  <h1>랜덤 <span>선곡</span></h1>
+  <h1 id="pageTitle">랜덤 <span>선곡</span></h1>
   <div class="header-actions" id="headerActions">
+    <div class="lang-toggle" id="langToggle">
+      <button type="button" class="lang-btn active" data-lang="ko">한</button>
+      <button type="button" class="lang-btn" data-lang="en">EN</button>
+      <button type="button" class="lang-btn" data-lang="ja">日</button>
+    </div>
     <span id="connStatus">시트 연결 안 됨</span>
     <button class="btn-ghost btn-small" id="settingsToggleBtn" style="display:none;">⚙ 시트 설정</button>
   </div>
@@ -906,29 +937,29 @@
 <div class="social-links">
   <a class="social-btn social-discord" href="https://discord.com/invite/kFwm4eQMrg" target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.45.87-.61 1.26a18.3 18.3 0 0 0-5.48 0 12.6 12.6 0 0 0-.62-1.26.08.08 0 0 0-.08-.04c-1.7.29-3.34.8-4.89 1.52a.07.07 0 0 0-.03.03C.53 8.09-.32 11.7.1 15.26a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6 3.03.08.08 0 0 0 .08-.03c.46-.63.87-1.3 1.23-2a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.9.08.08 0 0 1-.01-.13c.13-.09.25-.19.37-.28a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01c.12.1.24.19.37.28a.08.08 0 0 1-.01.13c-.6.35-1.23.65-1.88.9a.08.08 0 0 0-.04.11c.36.7.78 1.37 1.23 2a.08.08 0 0 0 .08.03 19.8 19.8 0 0 0 6.01-3.03.08.08 0 0 0 .03-.06c.5-4.12-.62-7.7-2.68-10.86a.06.06 0 0 0-.03-.03zM8.02 13.33c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.34-.96 2.42-2.16 2.42zm7.97 0c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.34-.95 2.42-2.16 2.42z"/></svg>
-    디스코드
+    <span id="socialDiscordLabel">디스코드</span>
   </a>
   <a class="social-btn social-fanding" href="https://fanding.kr/@SRCUP/" target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.7-4.35-9.3-8.2C.9 10.1 1.4 6.7 4.2 5c2.3-1.4 5-.7 6.8 1.2.4.4.7.9 1 1.4.3-.5.6-1 1-1.4C14.8 4.3 17.5 3.6 19.8 5c2.8 1.7 3.3 5.1 1.5 7.8C18.7 16.65 12 21 12 21z"/></svg>
-    후원(펀딩)
+    <span id="socialFandingLabel">후원(펀딩)</span>
   </a>
   <a class="social-btn social-youtube" href="https://www.youtube.com/@rairatortaiko" target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.6 15.6V8.4L15.8 12l-6.2 3.6z"/></svg>
-    유튜브
+    <span id="socialYoutubeLabel">유튜브</span>
   </a>
 </div>
 
 <div class="panel" id="settingsPanel">
-  <h2>구글 시트 연결</h2>
+  <h2 id="sheetPanelTitle">구글 시트 연결</h2>
   <div class="field-row">
-    <label>시트 ID</label>
+    <label id="sheetIdLabel">시트 ID</label>
     <input type="text" id="sheetIdInput" placeholder="예: 1OAz1lp3wmpMTtbtZtf86hRIUlL0yk_Z2zuyufTxSTLY" />
   </div>
   <div class="field-row">
-    <label>탭 gid</label>
+    <label id="sheetGidLabel">탭 gid</label>
     <input type="text" id="sheetGidInput" placeholder="예: 631497038 (비워두면 첫 번째 탭)" />
   </div>
-  <div class="field-hint">
+  <div class="field-hint" id="sheetHint">
     시트 URL의 <code>/d/</code> 와 <code>/edit</code> 사이 문자열이 시트 ID이고, URL 끝의 <code>gid=</code> 뒤 숫자가 탭 gid입니다.<br>
     시트 공유 설정이 <strong>"링크가 있는 모든 사용자 - 뷰어"</strong>로 되어 있어야 불러올 수 있습니다.<br>
     열 구성: <strong>A</strong>원곡명 · <strong>D</strong>한국어명 · <strong>E</strong>카테고리 · <strong>F</strong>오니 레벨 · <strong>G</strong>우라 레벨 · <strong>H</strong>어려움 레벨 · <strong>I</strong>우라 존재 여부 · <strong>J</strong>오니 서열등급(선택) · <strong>K</strong>우라 서열등급(선택)
@@ -940,7 +971,7 @@
 </div>
 
 <div class="pool-select" id="poolSelect" style="display:none;">
-  <span class="pool-label">뽑을 난이도 풀</span>
+  <span class="pool-label" id="poolLabel">뽑을 난이도 풀</span>
   <div class="pool-toggle">
     <button class="active" id="poolOniUraBtn" data-pool="oniura">오니 / 우라</button>
     <button id="poolHardBtn" data-pool="hard">어려움</button>
@@ -949,40 +980,40 @@
 
 <div class="filter-panel" id="filterPanel" style="display:none;">
   <div class="filter-row custom-pool-row">
-    <span class="filter-label">곡 선택 방식</span>
+    <span class="filter-label" id="filterSongSelectLabel">곡 선택 방식</span>
     <div class="custom-pool-toggle-wrap">
       <span class="custom-pool-status" id="customPoolStatus">필터로 선택 중</span>
       <label class="custom-pool-switch-wrap" id="customPoolSwitchWrap" style="display:none;">
         <input type="checkbox" id="customPoolSwitch" />
         <span class="custom-pool-switch"></span>
-        <span class="custom-pool-switch-label">커스텀 풀 사용</span>
+        <span class="custom-pool-switch-label" id="customPoolSwitchLabel">커스텀 풀 사용</span>
       </label>
       <button class="btn-ghost btn-small" id="openCustomPoolBtn">🎵 커스텀 선곡풀 만들기</button>
     </div>
   </div>
   <div class="filter-row custom-pool-row" id="excludeStatusRow" style="display:none;">
-    <span class="filter-label">제외 곡</span>
+    <span class="filter-label" id="filterExcludeLabel">제외 곡</span>
     <span class="custom-pool-status active" id="excludePoolStatus">제외 0곡 적용 중</span>
   </div>
   <div id="normalFilterFields">
     <div class="filter-row">
-      <span class="filter-label">난이도</span>
+      <span class="filter-label" id="filterLevelLabel">난이도</span>
       <div class="filter-cat-toggle" id="filterLevelToggle"></div>
     </div>
     <div class="filter-row" id="filterGrade8Row" style="display:none;">
-      <span class="filter-label">8렙 서열등급</span>
+      <span class="filter-label" id="filterGrade8Label">8렙 서열등급</span>
       <div class="filter-cat-toggle" id="filterGrade8Toggle"></div>
     </div>
     <div class="filter-row" id="filterGrade9Row" style="display:none;">
-      <span class="filter-label">9렙 서열등급</span>
+      <span class="filter-label" id="filterGrade9Label">9렙 서열등급</span>
       <div class="filter-cat-toggle" id="filterGrade9Toggle"></div>
     </div>
     <div class="filter-row" id="filterGrade10Row" style="display:none;">
-      <span class="filter-label">10렙 서열등급</span>
+      <span class="filter-label" id="filterGrade10Label">10렙 서열등급</span>
       <div class="filter-cat-toggle" id="filterGrade10Toggle"></div>
     </div>
     <div class="filter-row">
-      <span class="filter-label">카테고리</span>
+      <span class="filter-label" id="filterCategoryLabel">카테고리</span>
       <div class="filter-cat-toggle" id="filterCatToggle"></div>
     </div>
     <div class="filter-footer">
@@ -994,7 +1025,7 @@
 
 <div class="custom-pool-panel" id="customPoolPanel" style="display:none;">
   <div class="custom-pool-header">
-    <h2>커스텀 선곡풀</h2>
+    <h2 id="customPoolTitle">커스텀 선곡풀</h2>
     <button class="btn-primary btn-small" id="applyCustomPoolBtn">적용하고 돌아가기</button>
   </div>
 
@@ -1004,7 +1035,7 @@
   </div>
 
   <div id="includeTabPanel">
-    <p class="custom-pool-desc">전체 곡 중 원하는 곡만 하나씩 담아서, 그 곡들 안에서만 랜덤으로 뽑히게 합니다. 검색하거나 목록을 훑어보면서 담아보세요.</p>
+    <p class="custom-pool-desc" id="includeTabDesc">전체 곡 중 원하는 곡만 하나씩 담아서, 그 곡들 안에서만 랜덤으로 뽑히게 합니다. 검색하거나 목록을 훑어보면서 담아보세요.</p>
 
     <div class="custom-pool-picked" id="customPoolPickedWrap">
       <div class="custom-pool-picked-header">
@@ -1012,7 +1043,7 @@
         <button class="btn-ghost btn-small" id="clearCustomPoolBtn">전체 비우기</button>
       </div>
       <div class="custom-pool-picked-list" id="customPoolPickedList">
-        <div class="custom-pool-empty">아직 담은 곡이 없습니다.</div>
+        <div class="custom-pool-empty" id="customPoolEmptyPicked">아직 담은 곡이 없습니다.</div>
       </div>
     </div>
 
@@ -1021,7 +1052,7 @@
   </div>
 
   <div id="excludeTabPanel" style="display:none;">
-    <p class="custom-pool-desc">여기서 고른 곡은 필터나 커스텀 선곡풀 설정과 상관없이 항상 랜덤 뽑기에서 제외됩니다. 이미 연습한 곡을 빼거나, 대회 금지곡을 지정할 때 써보세요.</p>
+    <p class="custom-pool-desc" id="excludeTabDesc">여기서 고른 곡은 필터나 커스텀 선곡풀 설정과 상관없이 항상 랜덤 뽑기에서 제외됩니다. 이미 연습한 곡을 빼거나, 대회 금지곡을 지정할 때 써보세요.</p>
 
     <div class="custom-pool-picked" id="excludePoolPickedWrap">
       <div class="custom-pool-picked-header">
@@ -1029,7 +1060,7 @@
         <button class="btn-ghost btn-small" id="clearExcludePoolBtn">전체 비우기</button>
       </div>
       <div class="custom-pool-picked-list" id="excludePoolPickedList">
-        <div class="custom-pool-empty">제외된 곡이 없습니다.</div>
+        <div class="custom-pool-empty" id="excludeEmptyPicked">제외된 곡이 없습니다.</div>
       </div>
     </div>
 
@@ -1055,17 +1086,17 @@
 
   <div class="goal-section" id="goalSection">
     <div class="goal-header">
-      <span class="goal-title">목표 뽑기</span>
+      <span class="goal-title" id="goalTitleLabel">목표 뽑기</span>
       <button class="btn-primary btn-small" id="goalRollBtn" disabled>목표 뽑기</button>
     </div>
     <div class="goal-unit-row">
-      <label for="unitSelect" class="goal-unit-label">내 단위</label>
+      <label for="unitSelect" class="goal-unit-label" id="goalUnitLabel">내 단위</label>
       <select id="unitSelect" class="goal-unit-select" disabled>
         <option value="">단위 데이터를 불러오는 중...</option>
       </select>
     </div>
     <div class="goal-unit-row">
-      <span class="goal-unit-label">합격 구분</span>
+      <span class="goal-unit-label" id="goalPassTypeLabel">합격 구분</span>
       <div class="unit-type-toggle">
         <button type="button" class="unit-type-btn active" data-unit-type="적">적합격</button>
         <button type="button" class="unit-type-btn" data-unit-type="금">금합격</button>
@@ -1074,15 +1105,15 @@
     <div class="goal-hint" id="goalHint">곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.</div>
     <div class="goal-grid" id="goalGrid" style="display:none;">
       <div class="goal-item">
-        <span class="goal-label">플레이 수</span>
+        <span class="goal-label" id="goalLabelPlay">플레이 수</span>
         <span class="goal-value" id="goalPlayValue">-</span>
       </div>
       <div class="goal-item">
-        <span class="goal-label">가 이내</span>
+        <span class="goal-label" id="goalLabelMiss">가 이내</span>
         <span class="goal-value" id="goalMissValue">-</span>
       </div>
       <div class="goal-item">
-        <span class="goal-label">불가 개수</span>
+        <span class="goal-label" id="goalLabelClear">불가 개수</span>
         <span class="goal-value" id="goalClearValue">-</span>
       </div>
     </div>
@@ -1095,15 +1126,15 @@
 
 <div class="history" id="historyPanel" style="display:none;">
   <h2>
-    <span>최근 뽑은 곡</span>
+    <span id="historyTitleLabel">최근 뽑은 곡</span>
     <button class="btn-ghost btn-small" id="clearHistoryBtn">기록 지우기</button>
   </h2>
   <div class="history-list" id="historyList">
-    <div class="history-empty">뽑은 기록이 여기 쌓입니다.</div>
+    <div class="history-empty" id="historyEmptyLabel">뽑은 기록이 여기 쌓입니다.</div>
   </div>
 </div>
 
-<footer>같은 곡은 선택한 난이도 풀을 다 뽑기 전까지 다시 나오지 않습니다.</footer>
+<footer id="footerNote">같은 곡은 선택한 난이도 풀을 다 뽑기 전까지 다시 나오지 않습니다.</footer>
 
 <script>
 (function () {
@@ -1128,7 +1159,564 @@
   const HISTORY_KEY = 'taikoRandom:historyV2';
   const POOL_KEY = 'taikoRandom:poolMode';
 
+  // ══════════════════════════════════════════════════════════
+  // 다국어(i18n) 지원 — UI 문자열만 대상. 곡 제목/카테고리 원본 데이터는
+  // 시트에서 그대로 오되, 표시용 라벨(카테고리명 등)만 아래 사전으로 번역한다.
+  // ══════════════════════════════════════════════════════════
+  const LANG_KEY = 'taikoRandom:lang';
+  const SUPPORTED_LANGS = ['ko', 'en', 'ja'];
+  let currentLang = 'ko';
+
+  function loadLang() {
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved && SUPPORTED_LANGS.includes(saved)) return saved;
+    } catch (e) {}
+    return 'ko';
+  }
+  function saveLang(lang) {
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+  }
+
+  const I18N = {
+    ko: {
+      title_random: '랜덤',
+      title_selection: '선곡',
+      conn_status_none: '시트 연결 안 됨',
+      settings_toggle: '⚙ 시트 설정',
+      social_discord: '디스코드',
+      social_fanding: '후원(펀딩)',
+      social_youtube: '유튜브',
+      sheet_panel_title: '구글 시트 연결',
+      sheet_id_label: '시트 ID',
+      sheet_id_placeholder: '예: 1OAz1lp3wmpMTtbtZtf86hRIUlL0yk_Z2zuyufTxSTLY',
+      sheet_gid_label: '탭 gid',
+      sheet_gid_placeholder: '예: 631497038 (비워두면 첫 번째 탭)',
+      sheet_hint_html: '시트 URL의 <code>/d/</code> 와 <code>/edit</code> 사이 문자열이 시트 ID이고, URL 끝의 <code>gid=</code> 뒤 숫자가 탭 gid입니다.<br>시트 공유 설정이 <strong>"링크가 있는 모든 사용자 - 뷰어"</strong>로 되어 있어야 불러올 수 있습니다.<br>열 구성: <strong>A</strong>원곡명 · <strong>D</strong>한국어명 · <strong>E</strong>카테고리 · <strong>F</strong>오니 레벨 · <strong>G</strong>우라 레벨 · <strong>H</strong>어려움 레벨 · <strong>I</strong>우라 존재 여부 · <strong>J</strong>오니 서열등급(선택) · <strong>K</strong>우라 서열등급(선택)',
+      btn_clear_sheet: '연결 해제',
+      btn_load_sheet: '불러오기',
+      pool_label: '뽑을 난이도 풀',
+      pool_oniura: '오니 / 우라',
+      pool_hard: '어려움',
+      filter_song_select_method: '곡 선택 방식',
+      custom_pool_status_filter: '필터로 선택 중',
+      custom_pool_switch_label: '커스텀 풀 사용',
+      btn_open_custom_pool: '🎵 커스텀 선곡풀 만들기',
+      btn_edit_custom_pool: '🎵 커스텀 선곡풀 수정',
+      filter_exclude_label: '제외 곡',
+      filter_level: '난이도',
+      filter_grade8: '8렙 서열등급',
+      filter_grade9: '9렙 서열등급',
+      filter_grade10: '10렙 서열등급',
+      filter_category: '카테고리',
+      btn_filter_reset: '필터 초기화',
+      custom_pool_title: '커스텀 선곡풀',
+      btn_apply_and_back: '적용하고 돌아가기',
+      tab_include: '담기',
+      tab_exclude: '제외',
+      custom_pool_include_desc: '전체 곡 중 원하는 곡만 하나씩 담아서, 그 곡들 안에서만 랜덤으로 뽑히게 합니다. 검색하거나 목록을 훑어보면서 담아보세요.',
+      custom_pool_picked_count: (n) => `담은 곡 ${n}개`,
+      btn_clear_all: '전체 비우기',
+      custom_pool_empty_picked: '아직 담은 곡이 없습니다.',
+      custom_pool_search_placeholder: '곡 이름 검색 (원곡명 또는 한국어명)',
+      custom_pool_exclude_desc: '여기서 고른 곡은 필터나 커스텀 선곡풀 설정과 상관없이 항상 랜덤 뽑기에서 제외됩니다. 이미 연습한 곡을 빼거나, 대회 금지곡을 지정할 때 써보세요.',
+      exclude_pool_picked_count: (n) => `제외 곡 ${n}개`,
+      exclude_pool_empty_picked: '제외된 곡이 없습니다.',
+      aria_remove: '빼기',
+      aria_unexclude: '제외 해제',
+      search_no_results: '검색 결과가 없습니다.',
+      btn_add: '담기',
+      btn_added: '담음 ✓',
+      btn_exclude: '제외',
+      btn_excluded: '제외됨 ✓',
+      aria_drum_btn: '랜덤 선곡 뽑기',
+      drum_btn_label: '뽑기',
+      drum_btn_rolling: '두구두구',
+      drum_hint_default: '버튼을 눌러 곡을 뽑아보세요.',
+      drum_hint_picking: '곡을 고르는 중...',
+      drum_hint_pool_done: '모든 곡을 다 뽑았습니다. 다시 누르면 처음부터 다시 섞습니다.',
+      drum_hint_reset: '중복 방지 목록을 초기화했습니다.',
+      result_empty: '아직 뽑은 곡이 없습니다.',
+      pool_count_label: (remain, total) => `곡 ${remain}개 대기 중 (전체 ${total}개)`,
+      pool_count_zero: (n) => `곡 ${n}개 대기 중`,
+      btn_reset_pool: '중복 방지 초기화',
+      goal_title: '목표 뽑기',
+      btn_goal_roll: '목표 뽑기',
+      goal_unit_label: '내 단위',
+      unit_loading: '단위 데이터를 불러오는 중...',
+      unit_none: '단위를 선택하세요',
+      unit_no_data: '단위 데이터 없음',
+      unit_group_dan: '초단~10단',
+      unit_group_rank: '현인~달인',
+      goal_pass_type_label: '합격 구분',
+      goal_pass_normal: '적합격',
+      goal_pass_gold: '금합격',
+      goal_hint_default: '곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.',
+      goal_hint_choose_unit: '먼저 "내 단위"를 선택해주세요.',
+      goal_hint_ready: '방금 뽑힌 곡 난이도에 맞는 목표를 뽑아보세요.',
+      goal_hint_hard_unsupported: '어려움 난이도는 목표 뽑기를 지원하지 않습니다. 오니/우라 풀에서 뽑아주세요.',
+      goal_hint_no_data: '이 단위의 목표 데이터를 찾지 못했습니다.',
+      goal_hint_clear: (label) => `${label}. 완주(클리어) 자체가 목표입니다. 다시 누르면 새로운 목표가 나옵니다.`,
+      goal_hint_normal: (label) => `${label}. 다시 누르면 새로운 목표가 나옵니다.`,
+      goal_play_count: (n) => `${n}플레이 이내`,
+      goal_miss_within: (n) => `가 ${n}개 이내`,
+      goal_miss_dash: '-',
+      goal_clear_value: (n) => `불가 ${n}개 이내`,
+      goal_clear_fullcombo: '풀콤보',
+      goal_clear_label_clear: '클리어',
+      goal_label_play: '플레이 수',
+      goal_label_miss: '가 이내',
+      goal_label_clear: '불가 개수',
+      empty_state_html: '아직 연결된 시트가 없습니다. 오른쪽 위 <strong>⚙ 시트 설정</strong>에서 구글 시트를 연결해주세요.',
+      history_title: '최근 뽑은 곡',
+      btn_clear_history: '기록 지우기',
+      history_empty: '뽑은 기록이 여기 쌓입니다.',
+      footer_note: '같은 곡은 선택한 난이도 풀을 다 뽑기 전까지 다시 나오지 않습니다.',
+      status_sheet_id_required: '시트 ID를 입력해주세요.',
+      status_loading: '불러오는 중...',
+      status_not_found: '곡을 찾지 못했습니다. 시트 구조/공유 설정을 확인해주세요.',
+      status_connected: (n) => `연결됨 · ${n}곡`,
+      status_load_failed: '불러오기에 실패했습니다.',
+      custom_pool_status_active: (n) => `커스텀 선곡풀 사용 중 · ${n}곡`,
+      custom_pool_status_filter_kept: (n) => `필터로 선택 중 (커스텀 풀 ${n}곡 보관됨)`,
+      exclude_status: (n) => `제외 ${n}곡 적용 중`,
+      filter_status_all_levels: '레벨 전체',
+      filter_status_n_levels: (n) => `레벨 ${n}개 선택`,
+      filter_status_grade8: (n) => `8렙등급 ${n}개`,
+      filter_status_grade9: (n) => `9렙등급 ${n}개`,
+      filter_status_grade10: (n) => `10렙등급 ${n}개`,
+      filter_status_category: (n) => `카테고리 ${n}개 선택`,
+      situation_same: '이 단위에 정확히 맞는 난이도',
+      situation_easier: '이 단위보다 쉬운 곡',
+      situation_very_easy: '이 단위보다 매우 쉬운 곡',
+      situation_harder: '이 단위보다 어려운 곡',
+      situation_clear: '이 단위로는 도전 자체가 목표인 곡',
+      diff_hard: '어려움',
+      diff_oni: '오니',
+      diff_ura: '우라',
+      grade_none: '등급없음',
+      lang_name_ko: '한국어',
+      lang_name_en: 'English',
+      lang_name_ja: '日本語',
+    },
+    en: {
+      title_random: 'Random',
+      title_selection: 'Song Picker',
+      conn_status_none: 'Sheet not connected',
+      settings_toggle: '⚙ Sheet Settings',
+      social_discord: 'Discord',
+      social_fanding: 'Support (Funding)',
+      social_youtube: 'YouTube',
+      sheet_panel_title: 'Connect Google Sheet',
+      sheet_id_label: 'Sheet ID',
+      sheet_id_placeholder: 'e.g. 1OAz1lp3wmpMTtbtZtf86hRIUlL0yk_Z2zuyufTxSTLY',
+      sheet_gid_label: 'Tab gid',
+      sheet_gid_placeholder: 'e.g. 631497038 (leave blank for first tab)',
+      sheet_hint_html: 'The Sheet ID is the string between <code>/d/</code> and <code>/edit</code> in the sheet URL, and the tab gid is the number after <code>gid=</code> at the end of the URL.<br>The sheet must be shared as <strong>"Anyone with the link - Viewer"</strong> to be loaded.<br>Columns: <strong>A</strong> Original title · <strong>D</strong> Korean title · <strong>E</strong> Category · <strong>F</strong> Oni level · <strong>G</strong> Ura level · <strong>H</strong> Hard level · <strong>I</strong> Has Ura · <strong>J</strong> Oni rank (optional) · <strong>K</strong> Ura rank (optional)',
+      btn_clear_sheet: 'Disconnect',
+      btn_load_sheet: 'Load',
+      pool_label: 'Difficulty pool',
+      pool_oniura: 'Oni / Ura',
+      pool_hard: 'Hard',
+      filter_song_select_method: 'Selection method',
+      custom_pool_status_filter: 'Using filters',
+      custom_pool_switch_label: 'Use custom pool',
+      btn_open_custom_pool: '🎵 Create custom pool',
+      btn_edit_custom_pool: '🎵 Edit custom pool',
+      filter_exclude_label: 'Excluded songs',
+      filter_level: 'Level',
+      filter_grade8: 'Lv.8 Rank',
+      filter_grade9: 'Lv.9 Rank',
+      filter_grade10: 'Lv.10 Rank',
+      filter_category: 'Category',
+      btn_filter_reset: 'Reset filters',
+      custom_pool_title: 'Custom Song Pool',
+      btn_apply_and_back: 'Apply & Go Back',
+      tab_include: 'Include',
+      tab_exclude: 'Exclude',
+      custom_pool_include_desc: 'Pick only the songs you want from the full list, and only those will be drawn at random. Search or browse the list to add songs.',
+      custom_pool_picked_count: (n) => `${n} song(s) added`,
+      btn_clear_all: 'Clear all',
+      custom_pool_empty_picked: 'No songs added yet.',
+      custom_pool_search_placeholder: 'Search song title (original or Korean)',
+      custom_pool_exclude_desc: 'Songs picked here are always excluded from random draws, regardless of filters or custom pool settings. Use this to remove songs you\'ve already practiced or ban songs for a competition.',
+      exclude_pool_picked_count: (n) => `${n} excluded`,
+      exclude_pool_empty_picked: 'No excluded songs.',
+      aria_remove: 'Remove',
+      aria_unexclude: 'Unexclude',
+      search_no_results: 'No results found.',
+      btn_add: 'Add',
+      btn_added: 'Added ✓',
+      btn_exclude: 'Exclude',
+      btn_excluded: 'Excluded ✓',
+      aria_drum_btn: 'Draw a random song',
+      drum_btn_label: 'Draw',
+      drum_btn_rolling: 'Rolling',
+      drum_hint_default: 'Press the button to draw a song.',
+      drum_hint_picking: 'Picking a song...',
+      drum_hint_pool_done: 'All songs have been drawn. Press again to reshuffle from the start.',
+      drum_hint_reset: 'The no-repeat list has been reset.',
+      result_empty: 'No song drawn yet.',
+      pool_count_label: (remain, total) => `${remain} song(s) left (${total} total)`,
+      pool_count_zero: (n) => `${n} song(s) left`,
+      btn_reset_pool: 'Reset no-repeat',
+      goal_title: 'Goal Draw',
+      btn_goal_roll: 'Draw Goal',
+      goal_unit_label: 'My Rank',
+      unit_loading: 'Loading rank data...',
+      unit_none: 'Select a rank',
+      unit_no_data: 'No rank data',
+      unit_group_dan: 'Shodan - 10th Dan',
+      unit_group_rank: 'Kenjin - Tatsujin',
+      goal_pass_type_label: 'Pass type',
+      goal_pass_normal: 'Red Pass',
+      goal_pass_gold: 'Gold Pass',
+      goal_hint_default: 'Draw a song first to get a goal matching its difficulty.',
+      goal_hint_choose_unit: 'Please select "My Rank" first.',
+      goal_hint_ready: 'Draw a goal that matches the difficulty of the song you just drew.',
+      goal_hint_hard_unsupported: 'Goal draws are not supported for Hard difficulty. Please draw from the Oni/Ura pool.',
+      goal_hint_no_data: 'Could not find goal data for this rank.',
+      goal_hint_clear: (label) => `${label}. Just finishing (clearing) the song is the goal. Press again for a new goal.`,
+      goal_hint_normal: (label) => `${label}. Press again for a new goal.`,
+      goal_play_count: (n) => `Within ${n} play(s)`,
+      goal_miss_within: (n) => `Within ${n} misses`,
+      goal_miss_dash: '-',
+      goal_clear_value: (n) => `Within ${n} bad/miss allowed`,
+      goal_clear_fullcombo: 'Full Combo',
+      goal_clear_label_clear: 'Clear',
+      goal_label_play: 'Plays',
+      goal_label_miss: 'Misses within',
+      goal_label_clear: 'Bad/Miss allowed',
+      empty_state_html: 'No sheet connected yet. Please connect a Google Sheet via <strong>⚙ Sheet Settings</strong> in the top right.',
+      history_title: 'Recent Draws',
+      btn_clear_history: 'Clear history',
+      history_empty: 'Your draw history will appear here.',
+      footer_note: 'The same song will not repeat until the entire selected difficulty pool has been drawn.',
+      status_sheet_id_required: 'Please enter a Sheet ID.',
+      status_loading: 'Loading...',
+      status_not_found: 'No songs found. Please check the sheet structure/sharing settings.',
+      status_connected: (n) => `Connected · ${n} songs`,
+      status_load_failed: 'Failed to load.',
+      custom_pool_status_active: (n) => `Using custom pool · ${n} songs`,
+      custom_pool_status_filter_kept: (n) => `Using filters (custom pool of ${n} songs saved)`,
+      exclude_status: (n) => `${n} song(s) excluded`,
+      filter_status_all_levels: 'All levels',
+      filter_status_n_levels: (n) => `${n} level(s) selected`,
+      filter_status_grade8: (n) => `${n} Lv.8 rank(s)`,
+      filter_status_grade9: (n) => `${n} Lv.9 rank(s)`,
+      filter_status_grade10: (n) => `${n} Lv.10 rank(s)`,
+      filter_status_category: (n) => `${n} categor${n === 1 ? 'y' : 'ies'} selected`,
+      situation_same: 'A difficulty that exactly matches this rank',
+      situation_easier: 'A song easier than this rank',
+      situation_very_easy: 'A song much easier than this rank',
+      situation_harder: 'A song harder than this rank',
+      situation_clear: 'A song where simply clearing it is the goal for this rank',
+      diff_hard: 'Hard',
+      diff_oni: 'Oni',
+      diff_ura: 'Ura',
+      grade_none: 'No rank',
+      lang_name_ko: '한국어',
+      lang_name_en: 'English',
+      lang_name_ja: '日本語',
+    },
+    ja: {
+      title_random: 'ランダム',
+      title_selection: '選曲',
+      conn_status_none: 'シート未接続',
+      settings_toggle: '⚙ シート設定',
+      social_discord: 'Discord',
+      social_fanding: '支援(ファンディング)',
+      social_youtube: 'YouTube',
+      sheet_panel_title: 'Googleスプレッドシート連携',
+      sheet_id_label: 'シートID',
+      sheet_id_placeholder: '例: 1OAz1lp3wmpMTtbtZtf86hRIUlL0yk_Z2zuyufTxSTLY',
+      sheet_gid_label: 'タブ gid',
+      sheet_gid_placeholder: '例: 631497038（空欄で最初のタブ）',
+      sheet_hint_html: 'シートURLの <code>/d/</code> と <code>/edit</code> の間の文字列がシートIDで、URL末尾の <code>gid=</code> の後の数字がタブgidです。<br>シートの共有設定が<strong>「リンクを知っている全員 - 閲覧者」</strong>になっている必要があります。<br>列構成: <strong>A</strong>原曲名 · <strong>D</strong>韓国語名 · <strong>E</strong>カテゴリ · <strong>F</strong>鬼レベル · <strong>G</strong>裏レベル · <strong>H</strong>むずかしいレベル · <strong>I</strong>裏の有無 · <strong>J</strong>鬼ランク(任意) · <strong>K</strong>裏ランク(任意)',
+      btn_clear_sheet: '接続解除',
+      btn_load_sheet: '読み込み',
+      pool_label: '抽選する難易度プール',
+      pool_oniura: '鬼 / 裏',
+      pool_hard: 'むずかしい',
+      filter_song_select_method: '曲の選択方法',
+      custom_pool_status_filter: 'フィルターで選択中',
+      custom_pool_switch_label: 'カスタムプールを使用',
+      btn_open_custom_pool: '🎵 カスタム選曲プール作成',
+      btn_edit_custom_pool: '🎵 カスタム選曲プール編集',
+      filter_exclude_label: '除外曲',
+      filter_level: '難易度',
+      filter_grade8: '8レベル ランク',
+      filter_grade9: '9レベル ランク',
+      filter_grade10: '10レベル ランク',
+      filter_category: 'カテゴリ',
+      btn_filter_reset: 'フィルターをリセット',
+      custom_pool_title: 'カスタム選曲プール',
+      btn_apply_and_back: '適用して戻る',
+      tab_include: '追加',
+      tab_exclude: '除外',
+      custom_pool_include_desc: '全曲の中から好きな曲だけを1つずつ追加し、その曲の中だけからランダムに選ばれるようにします。検索したり一覧を見ながら追加してみてください。',
+      custom_pool_picked_count: (n) => `追加した曲 ${n}曲`,
+      btn_clear_all: 'すべてクリア',
+      custom_pool_empty_picked: 'まだ追加した曲がありません。',
+      custom_pool_search_placeholder: '曲名検索（原曲名または韓国語名）',
+      custom_pool_exclude_desc: 'ここで選んだ曲は、フィルターやカスタム選曲プールの設定に関係なく、常にランダム抽選から除外されます。すでに練習した曲を外したり、大会禁止曲を指定する際にお使いください。',
+      exclude_pool_picked_count: (n) => `除外曲 ${n}曲`,
+      exclude_pool_empty_picked: '除外された曲はありません。',
+      aria_remove: '削除',
+      aria_unexclude: '除外解除',
+      search_no_results: '検索結果がありません。',
+      btn_add: '追加',
+      btn_added: '追加済み ✓',
+      btn_exclude: '除外',
+      btn_excluded: '除外済み ✓',
+      aria_drum_btn: 'ランダム選曲を引く',
+      drum_btn_label: '抽選',
+      drum_btn_rolling: 'ドドドド',
+      drum_hint_default: 'ボタンを押して曲を引いてみましょう。',
+      drum_hint_picking: '曲を選んでいます...',
+      drum_hint_pool_done: 'すべての曲を引きました。もう一度押すと最初からシャッフルします。',
+      drum_hint_reset: '重複防止リストをリセットしました。',
+      result_empty: 'まだ曲を引いていません。',
+      pool_count_label: (remain, total) => `残り ${remain}曲（全${total}曲）`,
+      pool_count_zero: (n) => `${n}曲 待機中`,
+      btn_reset_pool: '重複防止をリセット',
+      goal_title: '目標抽選',
+      btn_goal_roll: '目標を引く',
+      goal_unit_label: '自分の段位',
+      unit_loading: '段位データを読み込み中...',
+      unit_none: '段位を選択してください',
+      unit_no_data: '段位データなし',
+      unit_group_dan: '初段〜10段',
+      unit_group_rank: '玄人〜達人',
+      goal_pass_type_label: '合格区分',
+      goal_pass_normal: '赤合格',
+      goal_pass_gold: '金合格',
+      goal_hint_default: '先に曲を引くと、その曲の難易度に合った目標を引けます。',
+      goal_hint_choose_unit: 'まず「自分の段位」を選択してください。',
+      goal_hint_ready: '今引いた曲の難易度に合った目標を引いてみましょう。',
+      goal_hint_hard_unsupported: 'むずかしい難易度は目標抽選に対応していません。鬼/裏プールから引いてください。',
+      goal_hint_no_data: 'この段位の目標データが見つかりませんでした。',
+      goal_hint_clear: (label) => `${label}。完走（クリア）自体が目標です。もう一度押すと新しい目標が出ます。`,
+      goal_hint_normal: (label) => `${label}。もう一度押すと新しい目標が出ます。`,
+      goal_play_count: (n) => `${n}プレイ以内`,
+      goal_miss_within: (n) => `不可 ${n}個以内`,
+      goal_miss_dash: '-',
+      goal_clear_value: (n) => `不可 ${n}個以内`,
+      goal_clear_fullcombo: 'フルコンボ',
+      goal_clear_label_clear: 'クリア',
+      goal_label_play: 'プレイ数',
+      goal_label_miss: '不可以内',
+      goal_label_clear: '不可個数',
+      empty_state_html: 'まだシートが接続されていません。右上の<strong>⚙ シート設定</strong>からGoogleスプレッドシートを接続してください。',
+      history_title: '最近引いた曲',
+      btn_clear_history: '履歴を消去',
+      history_empty: '引いた履歴がここに表示されます。',
+      footer_note: '同じ曲は、選択した難易度プールをすべて引き切るまで再び出てきません。',
+      status_sheet_id_required: 'シートIDを入力してください。',
+      status_loading: '読み込み中...',
+      status_not_found: '曲が見つかりませんでした。シート構成/共有設定を確認してください。',
+      status_connected: (n) => `接続済み · ${n}曲`,
+      status_load_failed: '読み込みに失敗しました。',
+      custom_pool_status_active: (n) => `カスタム選曲プール使用中 · ${n}曲`,
+      custom_pool_status_filter_kept: (n) => `フィルターで選択中（カスタムプール${n}曲を保存中）`,
+      exclude_status: (n) => `除外 ${n}曲 適用中`,
+      filter_status_all_levels: 'レベル全体',
+      filter_status_n_levels: (n) => `レベル ${n}個選択`,
+      filter_status_grade8: (n) => `8レベル等級 ${n}個`,
+      filter_status_grade9: (n) => `9レベル等級 ${n}個`,
+      filter_status_grade10: (n) => `10レベル等級 ${n}個`,
+      filter_status_category: (n) => `カテゴリ ${n}個選択`,
+      situation_same: 'この段位にちょうど合う難易度',
+      situation_easier: 'この段位より簡単な曲',
+      situation_very_easy: 'この段位よりかなり簡単な曲',
+      situation_harder: 'この段位より難しい曲',
+      situation_clear: 'この段位では完走自体が目標となる曲',
+      diff_hard: 'むずかしい',
+      diff_oni: '鬼',
+      diff_ura: '裏',
+      grade_none: '等級なし',
+      lang_name_ko: '한국어',
+      lang_name_en: 'English',
+      lang_name_ja: '日本語',
+    },
+  };
+
+  function t(key, ...args) {
+    const dict = I18N[currentLang] || I18N.ko;
+    const entry = dict[key] !== undefined ? dict[key] : (I18N.ko[key] !== undefined ? I18N.ko[key] : key);
+    return typeof entry === 'function' ? entry(...args) : entry;
+  }
+
+  // 카테고리명 1:1 번역 매핑 (내부 카테고리 키는 한국어 그대로 유지, 표시할 때만 변환)
+  const CATEGORY_I18N = {
+    ko: {
+      '남코오리지널': '남코오리지널', '게임뮤직': '게임뮤직', '보컬로이드': '보컬로이드',
+      '버라이어티': '버라이어티', '동요': '동요', '애니메이션': '애니메이션',
+      '클래식': '클래식', '팝': '팝', '기타': '기타',
+    },
+    en: {
+      '남코오리지널': 'Namco Original', '게임뮤직': 'Game Music', '보컬로이드': 'Vocaloid',
+      '버라이어티': 'Variety', '동요': "Children's Song", '애니메이션': 'Anime',
+      '클래식': 'Classical', '팝': 'Pop', '기타': 'Other',
+    },
+    ja: {
+      '남코오리지널': 'ナムコオリジナル', '게임뮤직': 'ゲームミュージック', '보컬로이드': 'ボーカロイド',
+      '버라이어티': 'バラエティ', '동요': 'どうよう', '애니메이션': 'アニメ',
+      '클래식': 'クラシック', '팝': 'ポップス', '기타': 'その他',
+    },
+  };
+  function tCategory(catKey) {
+    const dict = CATEGORY_I18N[currentLang] || CATEGORY_I18N.ko;
+    return dict[catKey] || catKey;
+  }
+
+  // 등급명 번역 (하/중하/중/중상/상/최상/최상+/졸업/졸업+/개인차/등급없음)
+  const GRADE_I18N = {
+    ko: { '하': '하', '중하': '중하', '중': '중', '중상': '중상', '상': '상', '최상': '최상', '최상+': '최상+', '졸업': '졸업', '졸업+': '졸업+', '개인차': '개인차', '등급없음': '등급없음' },
+    en: { '하': 'Low', '중하': 'Mid-Low', '중': 'Mid', '중상': 'Mid-High', '상': 'High', '최상': 'Top', '최상+': 'Top+', '졸업': 'Graduate', '졸업+': 'Graduate+', '개인차': 'Varies', '등급없음': 'No rank' },
+    ja: { '하': '下', '중하': '中下', '중': '中', '중상': '中上', '상': '上', '최상': '最上', '최상+': '最上+', '졸업': '卒業', '졸업+': '卒業+', '개인차': '個人差', '등급없음': '等級なし' },
+  };
+  function tGrade(gradeKey) {
+    const dict = GRADE_I18N[currentLang] || GRADE_I18N.ko;
+    return dict[gradeKey] || gradeKey;
+  }
+
+  // 단위명 번역 (초단~10단, 현인~달인)
+  const UNIT_I18N = {
+    ko: { '초단': '초단', '2단': '2단', '3단': '3단', '4단': '4단', '5단': '5단', '6단': '6단', '7단': '7단', '8단': '8단', '9단': '9단', '10단': '10단', '현인': '현인', '명인': '명인', '초인': '초인', '달인': '달인' },
+    en: { '초단': 'Shodan', '2단': '2nd Dan', '3단': '3rd Dan', '4단': '4th Dan', '5단': '5th Dan', '6단': '6th Dan', '7단': '7th Dan', '8단': '8th Dan', '9단': '9th Dan', '10단': '10th Dan', '현인': 'Kenjin', '명인': 'Meijin', '초인': 'Choujin', '달인': 'Tatsujin' },
+    ja: { '초단': '初段', '2단': '2段', '3단': '3段', '4단': '4段', '5단': '5段', '6단': '6段', '7단': '7段', '8단': '8段', '9단': '9段', '10단': '10段', '현인': '玄人', '명인': '名人', '초인': '超人', '달인': '達人' },
+  };
+  function tUnit(unitKey) {
+    const dict = UNIT_I18N[currentLang] || UNIT_I18N.ko;
+    return dict[unitKey] || unitKey;
+  }
+
   const DIFF_LABEL = { hard: '어려움', oni: '오니', ura: '우라' };
+  function tDiff(diffKey) {
+    if (diffKey === 'hard') return t('diff_hard');
+    if (diffKey === 'oni') return t('diff_oni');
+    if (diffKey === 'ura') return t('diff_ura');
+    return DIFF_LABEL[diffKey] || diffKey;
+  }
+
+  // 정적 UI 문자열을 현재 언어로 다시 적용한다. 데이터 의존적인 동적 표시(카드,
+  // 히스토리, 필터 라벨, 단위 셀렉트 등)는 각자의 render 함수를 별도로 재호출해서 갱신한다.
+  function applyI18n() {
+    document.documentElement.lang = currentLang;
+    if (els.pageTitle) {
+      els.pageTitle.innerHTML = `${escapeHtml(t('title_random'))} <span>${escapeHtml(t('title_selection'))}</span>`;
+    }
+    if (els.socialDiscordLabel) els.socialDiscordLabel.textContent = t('social_discord');
+    if (els.socialFandingLabel) els.socialFandingLabel.textContent = t('social_fanding');
+    if (els.socialYoutubeLabel) els.socialYoutubeLabel.textContent = t('social_youtube');
+    if (els.settingsToggleBtn) els.settingsToggleBtn.textContent = t('settings_toggle');
+    if (els.sheetPanelTitle) els.sheetPanelTitle.textContent = t('sheet_panel_title');
+    if (els.sheetIdLabel) els.sheetIdLabel.textContent = t('sheet_id_label');
+    if (els.sheetIdInput) els.sheetIdInput.placeholder = t('sheet_id_placeholder');
+    if (els.sheetGidLabel) els.sheetGidLabel.textContent = t('sheet_gid_label');
+    if (els.sheetGidInput) els.sheetGidInput.placeholder = t('sheet_gid_placeholder');
+    if (els.sheetHint) els.sheetHint.innerHTML = t('sheet_hint_html');
+    if (els.clearSheetBtn) els.clearSheetBtn.textContent = t('btn_clear_sheet');
+    if (els.connectSheetBtn) els.connectSheetBtn.textContent = t('btn_load_sheet');
+    if (els.poolLabel) els.poolLabel.textContent = t('pool_label');
+    if (els.poolOniUraBtn) els.poolOniUraBtn.textContent = t('pool_oniura');
+    if (els.poolHardBtn) els.poolHardBtn.textContent = t('pool_hard');
+    if (els.filterSongSelectLabel) els.filterSongSelectLabel.textContent = t('filter_song_select_method');
+    if (els.customPoolSwitchLabel) els.customPoolSwitchLabel.textContent = t('custom_pool_switch_label');
+    if (els.filterExcludeLabel) els.filterExcludeLabel.textContent = t('filter_exclude_label');
+    if (els.filterLevelLabel) els.filterLevelLabel.textContent = t('filter_level');
+    if (els.filterGrade8Label) els.filterGrade8Label.textContent = t('filter_grade8');
+    if (els.filterGrade9Label) els.filterGrade9Label.textContent = t('filter_grade9');
+    if (els.filterGrade10Label) els.filterGrade10Label.textContent = t('filter_grade10');
+    if (els.filterCategoryLabel) els.filterCategoryLabel.textContent = t('filter_category');
+    if (els.filterResetBtn) els.filterResetBtn.textContent = t('btn_filter_reset');
+    if (els.customPoolTitle) els.customPoolTitle.textContent = t('custom_pool_title');
+    if (els.applyCustomPoolBtn) els.applyCustomPoolBtn.textContent = t('btn_apply_and_back');
+    if (els.tabIncludeBtn) els.tabIncludeBtn.textContent = t('tab_include');
+    if (els.tabExcludeBtn) els.tabExcludeBtn.textContent = t('tab_exclude');
+    if (els.includeTabDesc) els.includeTabDesc.textContent = t('custom_pool_include_desc');
+    if (els.clearCustomPoolBtn) els.clearCustomPoolBtn.textContent = t('btn_clear_all');
+    if (els.customPoolEmptyPicked) els.customPoolEmptyPicked.textContent = t('custom_pool_empty_picked');
+    if (els.customPoolSearchInput) els.customPoolSearchInput.placeholder = t('custom_pool_search_placeholder');
+    if (els.excludeTabDesc) els.excludeTabDesc.textContent = t('custom_pool_exclude_desc');
+    if (els.clearExcludePoolBtn) els.clearExcludePoolBtn.textContent = t('btn_clear_all');
+    if (els.excludeEmptyPicked) els.excludeEmptyPicked.textContent = t('exclude_pool_empty_picked');
+    if (els.excludePoolSearchInput) els.excludePoolSearchInput.placeholder = t('custom_pool_search_placeholder');
+    if (els.drumBtn) els.drumBtn.setAttribute('aria-label', t('aria_drum_btn'));
+    if (els.drumBtnLabel && !rolling) els.drumBtnLabel.textContent = t('drum_btn_label');
+    if (els.resetPoolBtn) els.resetPoolBtn.textContent = t('btn_reset_pool');
+    if (els.goalTitleLabel) els.goalTitleLabel.textContent = t('goal_title');
+    if (els.goalRollBtn) els.goalRollBtn.textContent = t('btn_goal_roll');
+    if (els.goalUnitLabel) els.goalUnitLabel.textContent = t('goal_unit_label');
+    if (els.goalPassTypeLabel) els.goalPassTypeLabel.textContent = t('goal_pass_type_label');
+    document.querySelectorAll('.unit-type-btn[data-unit-type="적"]').forEach((b) => { b.textContent = t('goal_pass_normal'); });
+    document.querySelectorAll('.unit-type-btn[data-unit-type="금"]').forEach((b) => { b.textContent = t('goal_pass_gold'); });
+    if (els.goalLabelPlay) els.goalLabelPlay.textContent = t('goal_label_play');
+    if (els.goalLabelMiss) els.goalLabelMiss.textContent = t('goal_label_miss');
+    if (els.goalLabelClear) els.goalLabelClear.textContent = t('goal_label_clear');
+    if (els.emptyState) els.emptyState.innerHTML = t('empty_state_html');
+    if (els.historyTitleLabel) els.historyTitleLabel.textContent = t('history_title');
+    if (els.clearHistoryBtn) els.clearHistoryBtn.textContent = t('btn_clear_history');
+    if (els.footerNote) els.footerNote.textContent = t('footer_note');
+
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.lang === currentLang);
+    });
+
+    // 연결 상태 텍스트: 시트 미연결일 때만 즉시 갱신(연결됨/에러 메시지는 각 동작에서 다시 세팅됨)
+    if (els.connStatus && els.connStatus.className === '') {
+      els.connStatus.textContent = t('conn_status_none');
+    }
+
+    // 결과가 비어있을 때의 안내문 갱신
+    if (els.resultEmpty) els.resultEmpty.textContent = t('result_empty');
+    if (els.drumHint && !rolling) {
+      const total = allSongs.length ? poolIndices(currentPoolMode).length : 0;
+      if (total > 0 && remainingIdx.length === 0) {
+        els.drumHint.textContent = t('drum_hint_pool_done');
+      } else {
+        els.drumHint.textContent = t('drum_hint_default');
+      }
+    }
+
+    // 단위 셀렉트, 필터 라벨/버튼, 카드/기록, 커스텀풀 목록 등 동적 콘텐츠를 다시 그린다.
+    if (typeof buildUnitSelect === 'function' && (unitGoalRows.length || rankUnitGoalRows.length)) buildUnitSelect();
+    else if (els.unitSelect && els.unitSelect.disabled) {
+      els.unitSelect.innerHTML = `<option value="">${escapeHtml(t('unit_loading'))}</option>`;
+    }
+    if (typeof buildCategoryFilterButtons === 'function') buildCategoryFilterButtons();
+    if (typeof buildGrade8Toggle === 'function') buildGrade8Toggle();
+    if (typeof buildGrade9Toggle === 'function') buildGrade9Toggle();
+    if (typeof buildGrade10Toggle === 'function') buildGrade10Toggle();
+    if (typeof syncCategoryButtonsUi === 'function') syncCategoryButtonsUi();
+    if (typeof syncGrade8ButtonsUi === 'function') syncGrade8ButtonsUi();
+    if (typeof syncGrade9ButtonsUi === 'function') syncGrade9ButtonsUi();
+    if (typeof syncGrade10ButtonsUi === 'function') syncGrade10ButtonsUi();
+    if (typeof renderFilterStatus === 'function') renderFilterStatus();
+    if (typeof renderCustomPoolStatus === 'function') renderCustomPoolStatus();
+    if (typeof renderExcludeStatus === 'function') renderExcludeStatus();
+    if (typeof renderPoolCount === 'function' && allSongs.length) renderPoolCount();
+    if (typeof renderHistory === 'function') renderHistory();
+    if (typeof renderCustomPoolPickedList === 'function' && els.customPoolPanel && els.customPoolPanel.style.display !== 'none') {
+      renderCustomPoolPickedList();
+      renderCustomPoolBrowseList();
+      renderExcludePickedList();
+      renderExcludeBrowseList();
+    }
+    // 이미 표시된 곡 카드가 있으면 현재 언어의 난이도/카테고리 라벨로 다시 그린다.
+    const existingCard = document.querySelector('.result-wrap .song-card');
+    if (existingCard && lastRenderedSong) {
+      existingCard.outerHTML = renderSongCard(lastRenderedSong.song, lastRenderedSong.diffInfo);
+    }
+  }
+
+  function setLang(lang) {
+    if (!SUPPORTED_LANGS.includes(lang)) return;
+    currentLang = lang;
+    saveLang(lang);
+    applyI18n();
+  }
 
   const els = {
     settingsPanel: document.getElementById('settingsPanel'),
@@ -1193,6 +1781,38 @@
     goalPlayValue: document.getElementById('goalPlayValue'),
     goalMissValue: document.getElementById('goalMissValue'),
     goalClearValue: document.getElementById('goalClearValue'),
+    pageTitle: document.getElementById('pageTitle'),
+    langToggle: document.getElementById('langToggle'),
+    socialDiscordLabel: document.getElementById('socialDiscordLabel'),
+    socialFandingLabel: document.getElementById('socialFandingLabel'),
+    socialYoutubeLabel: document.getElementById('socialYoutubeLabel'),
+    sheetPanelTitle: document.getElementById('sheetPanelTitle'),
+    sheetIdLabel: document.getElementById('sheetIdLabel'),
+    sheetGidLabel: document.getElementById('sheetGidLabel'),
+    sheetHint: document.getElementById('sheetHint'),
+    poolLabel: document.getElementById('poolLabel'),
+    filterSongSelectLabel: document.getElementById('filterSongSelectLabel'),
+    customPoolSwitchLabel: document.getElementById('customPoolSwitchLabel'),
+    filterExcludeLabel: document.getElementById('filterExcludeLabel'),
+    filterLevelLabel: document.getElementById('filterLevelLabel'),
+    filterGrade8Label: document.getElementById('filterGrade8Label'),
+    filterGrade9Label: document.getElementById('filterGrade9Label'),
+    filterGrade10Label: document.getElementById('filterGrade10Label'),
+    filterCategoryLabel: document.getElementById('filterCategoryLabel'),
+    customPoolTitle: document.getElementById('customPoolTitle'),
+    includeTabDesc: document.getElementById('includeTabDesc'),
+    customPoolEmptyPicked: document.getElementById('customPoolEmptyPicked'),
+    excludeTabDesc: document.getElementById('excludeTabDesc'),
+    excludeEmptyPicked: document.getElementById('excludeEmptyPicked'),
+    goalTitleLabel: document.getElementById('goalTitleLabel'),
+    goalUnitLabel: document.getElementById('goalUnitLabel'),
+    goalPassTypeLabel: document.getElementById('goalPassTypeLabel'),
+    goalLabelPlay: document.getElementById('goalLabelPlay'),
+    goalLabelMiss: document.getElementById('goalLabelMiss'),
+    goalLabelClear: document.getElementById('goalLabelClear'),
+    historyTitleLabel: document.getElementById('historyTitleLabel'),
+    historyEmptyLabel: document.getElementById('historyEmptyLabel'),
+    footerNote: document.getElementById('footerNote'),
   };
 
   let allSongs = [];       // 전체 곡 원본 (시트 그대로)
@@ -1200,6 +1820,7 @@
   let remainingIdx = [];   // 아직 안 뽑힌 곡의 index (allSongs 기준, 중복 방지 풀)
   let history = [];        // 뽑은 기록
   let lastDrawnGoalContext = null; // 가장 최근 뽑힌 곡의 목표 뽑기용 난이도 정보 {isLevel10, grade}
+  let lastRenderedSong = null;     // 현재 화면에 표시 중인 곡 카드 데이터 {song, diffInfo} (언어 전환 시 재렌더링용)
 
   // 필터 상태: 선택된 레벨(1~10) 집합 + 8렙/9렙/10렙 서열등급 집합 + 카테고리 집합.
   // 각 집합이 비어있으면 "그 축은 전체 허용"을 의미한다. 단, levels가 비어있으면 필터 자체가
@@ -1395,25 +2016,25 @@
       UNIT_ORDER.forEach((u) => {
         const existsCheck = u === '10단' ? findUnitRow('10단(1곡)') : findUnitRow(u);
         if (!existsCheck) return;
-        opts1.push(`<option value="${u}">${u}</option>`);
+        opts1.push(`<option value="${u}">${escapeHtml(tUnit(u))}</option>`);
       });
-      if (opts1.length) groups.push(`<optgroup label="초단~10단">${opts1.join('')}</optgroup>`);
+      if (opts1.length) groups.push(`<optgroup label="${escapeHtml(t('unit_group_dan'))}">${opts1.join('')}</optgroup>`);
     }
     if (rankUnitGoalRows.length) {
       const opts2 = [];
       RANK_UNIT_ORDER.forEach((u) => {
         if (!findRankUnitRow(u, '3곡')) return;
-        opts2.push(`<option value="${u}">${u}</option>`);
+        opts2.push(`<option value="${u}">${escapeHtml(tUnit(u))}</option>`);
       });
-      if (opts2.length) groups.push(`<optgroup label="현인~달인">${opts2.join('')}</optgroup>`);
+      if (opts2.length) groups.push(`<optgroup label="${escapeHtml(t('unit_group_rank'))}">${opts2.join('')}</optgroup>`);
     }
 
     if (!groups.length) {
-      els.unitSelect.innerHTML = '<option value="">단위 데이터 없음</option>';
+      els.unitSelect.innerHTML = `<option value="">${escapeHtml(t('unit_no_data'))}</option>`;
       els.unitSelect.disabled = true;
       return;
     }
-    els.unitSelect.innerHTML = `<option value="">단위를 선택하세요</option>${groups.join('')}`;
+    els.unitSelect.innerHTML = `<option value="">${escapeHtml(t('unit_none'))}</option>${groups.join('')}`;
     els.unitSelect.disabled = false;
 
     const savedUnitName = loadSelectedUnitName();
@@ -1610,13 +2231,9 @@
     return min + Math.floor(Math.random() * (max - min + 1));
   }
 
-  const SITUATION_LABEL = {
-    same: '이 단위에 정확히 맞는 난이도',
-    easier: '이 단위보다 쉬운 곡',
-    very_easy: '이 단위보다 매우 쉬운 곡',
-    harder: '이 단위보다 어려운 곡',
-    clear: '이 단위로는 도전 자체가 목표인 곡',
-  };
+  function situationLabel(situation) {
+    return t('situation_' + situation);
+  }
 
   function rollGoal() {
     if (!lastDrawnGoalContext || !selectedUnitKey) return;
@@ -1629,23 +2246,23 @@
     els.goalGrid.style.display = 'grid';
 
     if (situation === 'clear') {
-      els.goalPlayValue.textContent = `${playCount}플레이 이내`;
-      els.goalMissValue.textContent = '-';
-      els.goalClearValue.textContent = '클리어';
-      els.goalHint.textContent = `${SITUATION_LABEL.clear}. 완주(클리어) 자체가 목표입니다. 다시 누르면 새로운 목표가 나옵니다.`;
+      els.goalPlayValue.textContent = t('goal_play_count', playCount);
+      els.goalMissValue.textContent = t('goal_miss_dash');
+      els.goalClearValue.textContent = t('goal_clear_label_clear');
+      els.goalHint.textContent = t('goal_hint_clear', situationLabel('clear'));
     } else {
       const range = computeGoalRange(unitType, unitName, situation);
       if (!range) {
-        els.goalHint.textContent = '이 단위의 목표 데이터를 찾지 못했습니다.';
+        els.goalHint.textContent = t('goal_hint_no_data');
         return;
       }
       const missCount = pickIntInRangeMinMax(Math.floor(range.missMin), Math.floor(range.missMax));
       const clearCount = pickIntInRangeMinMax(Math.floor(range.clearMin), Math.floor(range.clearMax));
 
-      els.goalPlayValue.textContent = `${playCount}플레이 이내`;
-      els.goalMissValue.textContent = `가 ${missCount}개 이내`;
-      els.goalClearValue.textContent = clearCount === 0 ? '풀콤보' : `불가 ${clearCount}개 이내`;
-      els.goalHint.textContent = `${SITUATION_LABEL[situation]}. 다시 누르면 새로운 목표가 나옵니다.`;
+      els.goalPlayValue.textContent = t('goal_play_count', playCount);
+      els.goalMissValue.textContent = t('goal_miss_within', missCount);
+      els.goalClearValue.textContent = clearCount === 0 ? t('goal_clear_fullcombo') : t('goal_clear_value', clearCount);
+      els.goalHint.textContent = t('goal_hint_normal', situationLabel(situation));
     }
 
     document.querySelectorAll('.goal-item').forEach((el) => {
@@ -1917,26 +2534,26 @@
     els.customPoolSwitch.checked = isOn;
 
     if (isOn) {
-      els.customPoolStatus.textContent = `커스텀 선곡풀 사용 중 · ${customPoolState.titles.size}곡`;
+      els.customPoolStatus.textContent = t('custom_pool_status_active', customPoolState.titles.size);
       els.customPoolStatus.classList.add('active');
       els.normalFilterFields.style.display = 'none';
     } else if (hasSavedSongs) {
-      els.customPoolStatus.textContent = `필터로 선택 중 (커스텀 풀 ${customPoolState.titles.size}곡 보관됨)`;
+      els.customPoolStatus.textContent = t('custom_pool_status_filter_kept', customPoolState.titles.size);
       els.customPoolStatus.classList.remove('active');
       els.normalFilterFields.style.display = 'block';
     } else {
-      els.customPoolStatus.textContent = '필터로 선택 중';
+      els.customPoolStatus.textContent = t('custom_pool_status_filter');
       els.customPoolStatus.classList.remove('active');
       els.normalFilterFields.style.display = 'block';
     }
-    els.openCustomPoolBtn.textContent = hasSavedSongs ? '🎵 커스텀 선곡풀 수정' : '🎵 커스텀 선곡풀 만들기';
+    els.openCustomPoolBtn.textContent = hasSavedSongs ? t('btn_edit_custom_pool') : t('btn_open_custom_pool');
   }
 
   // 제외 목록 상태를 필터 패널 상단에 표시. 0곡이면 행 자체를 숨긴다.
   function renderExcludeStatus() {
     const count = excludePoolState.titles.size;
     els.excludeStatusRow.style.display = count > 0 ? 'flex' : 'none';
-    els.excludePoolStatus.textContent = `제외 ${count}곡 적용 중`;
+    els.excludePoolStatus.textContent = t('exclude_status', count);
   }
 
   // 곡은 그대로 둔 채 커스텀 풀 사용 여부만 켜고 끈다.
@@ -1950,25 +2567,25 @@
     els.resultEmpty.style.display = 'block';
     const existingCard = document.querySelector('.result-wrap .song-card');
     if (existingCard) existingCard.remove();
-    els.drumHint.textContent = '버튼을 눌러 곡을 뽑아보세요.';
+    els.drumHint.textContent = t('drum_hint_default');
 
     lastDrawnGoalContext = null;
     els.goalGrid.style.display = 'none';
     els.goalRollBtn.disabled = true;
-    els.goalHint.textContent = '곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.';
+    els.goalHint.textContent = t('goal_hint_default');
   }
 
   function renderCustomPoolPickedList() {
     const titles = Array.from(customPoolState.titles);
-    els.customPoolPickedCount.textContent = `담은 곡 ${titles.length}개`;
+    els.customPoolPickedCount.textContent = t('custom_pool_picked_count', titles.length);
     if (titles.length === 0) {
-      els.customPoolPickedList.innerHTML = '<div class="custom-pool-empty">아직 담은 곡이 없습니다.</div>';
+      els.customPoolPickedList.innerHTML = `<div class="custom-pool-empty">${escapeHtml(t('custom_pool_empty_picked'))}</div>`;
       return;
     }
-    els.customPoolPickedList.innerHTML = titles.map((t) => `
+    els.customPoolPickedList.innerHTML = titles.map((title) => `
       <div class="custom-pool-item">
-        <span class="title">${escapeHtml(t)}</span>
-        <button type="button" class="remove-btn" data-title="${escapeHtml(t)}" aria-label="빼기">×</button>
+        <span class="title">${escapeHtml(title)}</span>
+        <button type="button" class="remove-btn" data-title="${escapeHtml(title)}" aria-label="${escapeHtml(t('aria_remove'))}">×</button>
       </div>
     `).join('');
     els.customPoolPickedList.querySelectorAll('.remove-btn').forEach((btn) => {
@@ -1994,7 +2611,7 @@
     // 스크롤 탐색이 필요하면 계속 아래로 더 로드하는 대신, 전체를 다 넣되 가상 스크롤 없이도
     // 무난한 곡 수(약 1300~1500) 정도는 실제로 렌더링해도 괜찮은 수준이라 그대로 렌더링한다.
     if (list.length === 0) {
-      els.customPoolBrowseList.innerHTML = '<div class="custom-pool-browse-empty">검색 결과가 없습니다.</div>';
+      els.customPoolBrowseList.innerHTML = `<div class="custom-pool-browse-empty">${escapeHtml(t('search_no_results'))}</div>`;
       return;
     }
     els.customPoolBrowseList.innerHTML = list.map((s) => {
@@ -2004,7 +2621,7 @@
         <div class="custom-pool-browse-item${added ? ' added' : ''}">
           <span class="cat-dot-mini ${catCls}"></span>
           <span class="title">${escapeHtml(s.titleJp)}${s.titleKr ? `<span class="title-kr">${escapeHtml(s.titleKr)}</span>` : ''}</span>
-          <button type="button" class="add-btn" data-title="${escapeHtml(s.titleJp)}">${added ? '담음 ✓' : '담기'}</button>
+          <button type="button" class="add-btn" data-title="${escapeHtml(s.titleJp)}">${added ? escapeHtml(t('btn_added')) : escapeHtml(t('btn_add'))}</button>
         </div>
       `;
     }).join('');
@@ -2022,15 +2639,15 @@
 
   function renderExcludePickedList() {
     const titles = Array.from(excludePoolState.titles);
-    els.excludePoolPickedCount.textContent = `제외 곡 ${titles.length}개`;
+    els.excludePoolPickedCount.textContent = t('exclude_pool_picked_count', titles.length);
     if (titles.length === 0) {
-      els.excludePoolPickedList.innerHTML = '<div class="custom-pool-empty">제외된 곡이 없습니다.</div>';
+      els.excludePoolPickedList.innerHTML = `<div class="custom-pool-empty">${escapeHtml(t('exclude_pool_empty_picked'))}</div>`;
       return;
     }
-    els.excludePoolPickedList.innerHTML = titles.map((t) => `
+    els.excludePoolPickedList.innerHTML = titles.map((title) => `
       <div class="custom-pool-item">
-        <span class="title">${escapeHtml(t)}</span>
-        <button type="button" class="remove-btn" data-title="${escapeHtml(t)}" aria-label="제외 해제">×</button>
+        <span class="title">${escapeHtml(title)}</span>
+        <button type="button" class="remove-btn" data-title="${escapeHtml(title)}" aria-label="${escapeHtml(t('aria_unexclude'))}">×</button>
       </div>
     `).join('');
     els.excludePoolPickedList.querySelectorAll('.remove-btn').forEach((btn) => {
@@ -2053,7 +2670,7 @@
       );
     }
     if (list.length === 0) {
-      els.excludePoolBrowseList.innerHTML = '<div class="custom-pool-browse-empty">검색 결과가 없습니다.</div>';
+      els.excludePoolBrowseList.innerHTML = `<div class="custom-pool-browse-empty">${escapeHtml(t('search_no_results'))}</div>`;
       return;
     }
     els.excludePoolBrowseList.innerHTML = list.map((s) => {
@@ -2063,7 +2680,7 @@
         <div class="custom-pool-browse-item${excluded ? ' excluded' : ''}">
           <span class="cat-dot-mini ${catCls}"></span>
           <span class="title">${escapeHtml(s.titleJp)}${s.titleKr ? `<span class="title-kr">${escapeHtml(s.titleKr)}</span>` : ''}</span>
-          <button type="button" class="exclude-btn" data-title="${escapeHtml(s.titleJp)}">${excluded ? '제외됨 ✓' : '제외'}</button>
+          <button type="button" class="exclude-btn" data-title="${escapeHtml(s.titleJp)}">${excluded ? escapeHtml(t('btn_excluded')) : escapeHtml(t('btn_exclude'))}</button>
         </div>
       `;
     }).join('');
@@ -2126,12 +2743,12 @@
     els.resultEmpty.style.display = 'block';
     const existingCard = document.querySelector('.result-wrap .song-card');
     if (existingCard) existingCard.remove();
-    els.drumHint.textContent = '버튼을 눌러 곡을 뽑아보세요.';
+    els.drumHint.textContent = t('drum_hint_default');
 
     lastDrawnGoalContext = null;
     els.goalGrid.style.display = 'none';
     els.goalRollBtn.disabled = true;
-    els.goalHint.textContent = '곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.';
+    els.goalHint.textContent = t('goal_hint_default');
   }
 
   // ── 렌더링 ───────────────────────────────────────────────
@@ -2155,22 +2772,23 @@
 
   function renderPoolCount() {
     const total = poolIndices(currentPoolMode).length;
-    els.poolCountLabel.textContent = `곡 ${remainingIdx.length}개 대기 중 (전체 ${total}개)`;
+    els.poolCountLabel.textContent = t('pool_count_label', remainingIdx.length, total);
     els.drumBtn.disabled = total === 0;
   }
 
   function renderSongCard(song, diffInfo) {
+    lastRenderedSong = { song, diffInfo };
     const hasKr = song.titleKr !== '';
     const catCls = categoryClass(displayCategoryFor(song));
     const diffCls = diffClass(diffInfo.diffKey);
-    const diffName = DIFF_LABEL[diffInfo.diffKey];
+    const diffName = tDiff(diffInfo.diffKey);
     const hasRank = diffInfo.rank && diffInfo.rank !== '';
 
     return `
       <div class="song-card pop-in">
         <div class="song-diff-badge ${diffCls}">
           <span class="diff-level">${escapeHtml(diffInfo.level || '?')}</span>
-          ${hasRank ? `<span class="diff-rank">${escapeHtml(diffInfo.rank)}</span>` : ''}
+          ${hasRank ? `<span class="diff-rank">${escapeHtml(tGrade(diffInfo.rank))}</span>` : ''}
           <span class="diff-name">${escapeHtml(diffName)}</span>
         </div>
         <div class="song-body">
@@ -2184,7 +2802,7 @@
 
   function renderHistory() {
     if (history.length === 0) {
-      els.historyList.innerHTML = '<div class="history-empty">뽑은 기록이 여기 쌓입니다.</div>';
+      els.historyList.innerHTML = `<div class="history-empty">${escapeHtml(t('history_empty'))}</div>`;
       return;
     }
     els.historyList.innerHTML = history
@@ -2280,7 +2898,7 @@
 
   function buildGrade8Toggle() {
     els.filterGrade8Toggle.innerHTML = GRADE8_KEYS.map((key) => `
-      <button type="button" class="filter-cat-btn" data-grade8="${key}">${escapeHtml(key)}</button>
+      <button type="button" class="filter-cat-btn" data-grade8="${key}">${escapeHtml(tGrade(key))}</button>
     `).join('');
     els.filterGrade8Toggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -2295,7 +2913,7 @@
 
   function buildGrade9Toggle() {
     els.filterGrade9Toggle.innerHTML = GRADE9_KEYS.map((key) => `
-      <button type="button" class="filter-cat-btn" data-grade9="${key}">${escapeHtml(key)}</button>
+      <button type="button" class="filter-cat-btn" data-grade9="${key}">${escapeHtml(tGrade(key))}</button>
     `).join('');
     els.filterGrade9Toggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -2310,7 +2928,7 @@
 
   function buildGrade10Toggle() {
     els.filterGrade10Toggle.innerHTML = GRADE10_KEYS.map((key) => `
-      <button type="button" class="filter-cat-btn" data-grade10="${key}">${escapeHtml(key)}</button>
+      <button type="button" class="filter-cat-btn" data-grade10="${key}">${escapeHtml(tGrade(key))}</button>
     `).join('');
     els.filterGrade10Toggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -2346,7 +2964,7 @@
       return `
         <button type="button" class="filter-cat-btn" data-cat="${key}" style="color: var(${colorVar});">
           <span class="swatch" style="background: var(${colorVar});"></span>
-          ${escapeHtml(key)}
+          ${escapeHtml(tCategory(key))}
         </button>
       `;
     }).join('');
@@ -2371,11 +2989,11 @@
   function renderFilterStatus() {
     const parts = [];
     const maxLevel = currentPoolMode === 'hard' ? 8 : 10;
-    parts.push(filterState.levels.size === maxLevel ? '레벨 전체' : `레벨 ${filterState.levels.size}개 선택`);
-    if (filterState.grades8.size > 0) parts.push(`8렙등급 ${filterState.grades8.size}개`);
-    if (filterState.grades9.size > 0) parts.push(`9렙등급 ${filterState.grades9.size}개`);
-    if (filterState.grades10.size > 0) parts.push(`10렙등급 ${filterState.grades10.size}개`);
-    if (filterState.categories.size > 0) parts.push(`카테고리 ${filterState.categories.size}개 선택`);
+    parts.push(filterState.levels.size === maxLevel ? t('filter_status_all_levels') : t('filter_status_n_levels', filterState.levels.size));
+    if (filterState.grades8.size > 0) parts.push(t('filter_status_grade8', filterState.grades8.size));
+    if (filterState.grades9.size > 0) parts.push(t('filter_status_grade9', filterState.grades9.size));
+    if (filterState.grades10.size > 0) parts.push(t('filter_status_grade10', filterState.grades10.size));
+    if (filterState.categories.size > 0) parts.push(t('filter_status_category', filterState.categories.size));
     els.filterStatus.textContent = parts.join(' · ');
   }
 
@@ -2388,12 +3006,12 @@
     els.resultEmpty.style.display = 'block';
     const existingCard = document.querySelector('.result-wrap .song-card');
     if (existingCard) existingCard.remove();
-    els.drumHint.textContent = '버튼을 눌러 곡을 뽑아보세요.';
+    els.drumHint.textContent = t('drum_hint_default');
 
     lastDrawnGoalContext = null;
     els.goalGrid.style.display = 'none';
     els.goalRollBtn.disabled = true;
-    els.goalHint.textContent = '곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.';
+    els.goalHint.textContent = t('goal_hint_default');
   }
 
   function resetFilters() {
@@ -2423,13 +3041,13 @@
     els.resultEmpty.style.display = 'block';
     const existingCard = document.querySelector('.result-wrap .song-card');
     if (existingCard) existingCard.remove();
-    els.drumHint.textContent = '버튼을 눌러 곡을 뽑아보세요.';
+    els.drumHint.textContent = t('drum_hint_default');
 
     // 곡 풀이 바뀌면 이전에 뽑힌 곡 기준의 목표는 의미가 없어지므로 초기화
     lastDrawnGoalContext = null;
     els.goalGrid.style.display = 'none';
     els.goalRollBtn.disabled = true;
-    els.goalHint.textContent = '곡을 먼저 뽑으면 그 곡 난이도에 맞는 목표를 뽑을 수 있습니다.';
+    els.goalHint.textContent = t('goal_hint_default');
   }
 
   // ── 시트 연결 ────────────────────────────────────────────
@@ -2438,15 +3056,15 @@
     const sheetId = extractSheetId(sheetIdRaw);
     const gid = gidRaw ? extractGid(gidRaw) : '';
 
-    if (!sheetId) { setStatus('시트 ID를 입력해주세요.', 'err'); return; }
+    if (!sheetId) { setStatus(t('status_sheet_id_required'), 'err'); return; }
 
-    setStatus('불러오는 중...', 'loading');
+    setStatus(t('status_loading'), 'loading');
     els.connectSheetBtn.disabled = true;
 
     try {
       const songs = await fetchSongsFromSheet(sheetId, gid);
       if (songs.length === 0) {
-        setStatus('곡을 찾지 못했습니다. 시트 구조/공유 설정을 확인해주세요.', 'err');
+        setStatus(t('status_not_found'), 'err');
         els.connectSheetBtn.disabled = false;
         return;
       }
@@ -2454,7 +3072,7 @@
       allSongs = songs;
       saveConfig(sheetId, gid);
 
-      setStatus(`연결됨 · ${songs.length}곡`, 'ok');
+      setStatus(t('status_connected', songs.length), 'ok');
       showConnectedUi();
       setPoolMode(currentPoolMode);
       loadUnitGoalSheets(sheetId); // 같은 시트의 "단위목표설정"/"인단위목표설정" 탭도 함께 로딩
@@ -2462,7 +3080,7 @@
       if (!opts.silent) els.settingsPanel.style.display = 'none';
     } catch (err) {
       console.error(err);
-      setStatus(err.message || '불러오기에 실패했습니다.', 'err');
+      setStatus(err.message || t('status_load_failed'), 'err');
     } finally {
       els.connectSheetBtn.disabled = false;
     }
@@ -2475,7 +3093,7 @@
     lastDrawnGoalContext = null;
     els.sheetIdInput.value = '';
     els.sheetGidInput.value = '';
-    setStatus('시트 연결 안 됨', '');
+    setStatus(t('conn_status_none'), '');
     showDisconnectedUi();
     els.settingsPanel.style.display = 'block';
   }
@@ -2495,8 +3113,8 @@
     rolling = true;
     els.drumBtn.disabled = true;
     els.drumBtn.classList.add('rolling');
-    els.drumBtnLabel.textContent = '두구두구';
-    els.drumHint.textContent = '곡을 고르는 중...';
+    els.drumBtnLabel.textContent = t('drum_btn_rolling');
+    els.drumHint.textContent = t('drum_hint_picking');
 
     setTimeout(() => {
       const pickPos = Math.floor(Math.random() * remainingIdx.length);
@@ -2539,23 +3157,23 @@
       els.goalGrid.style.display = 'none';
       if (lastDrawnGoalContext && selectedUnitKey) {
         els.goalRollBtn.disabled = false;
-        els.goalHint.textContent = '방금 뽑힌 곡 난이도에 맞는 목표를 뽑아보세요.';
+        els.goalHint.textContent = t('goal_hint_ready');
       } else if (!selectedUnitKey) {
         els.goalRollBtn.disabled = true;
-        els.goalHint.textContent = '먼저 "내 단위"를 선택해주세요.';
+        els.goalHint.textContent = t('goal_hint_choose_unit');
       } else {
         els.goalRollBtn.disabled = true;
-        els.goalHint.textContent = '어려움 난이도는 목표 뽑기를 지원하지 않습니다. 오니/우라 풀에서 뽑아주세요.';
+        els.goalHint.textContent = t('goal_hint_hard_unsupported');
       }
 
       renderPoolCount();
       renderHistory();
 
       els.drumBtn.classList.remove('rolling');
-      els.drumBtnLabel.textContent = '뽑기';
+      els.drumBtnLabel.textContent = t('drum_btn_label');
       els.drumHint.textContent = remainingIdx.length === 0
-        ? '모든 곡을 다 뽑았습니다. 다시 누르면 처음부터 다시 섞습니다.'
-        : '버튼을 눌러 곡을 뽑아보세요.';
+        ? t('drum_hint_pool_done')
+        : t('drum_hint_default');
       els.drumBtn.disabled = false;
       rolling = false;
     }, 550);
@@ -2564,7 +3182,7 @@
   function resetPool() {
     remainingIdx = poolIndices(currentPoolMode).slice();
     renderPoolCount();
-    els.drumHint.textContent = '중복 방지 목록을 초기화했습니다.';
+    els.drumHint.textContent = t('drum_hint_reset');
   }
 
   function clearHistory() {
@@ -2591,10 +3209,10 @@
     els.goalGrid.style.display = 'none';
     if (lastDrawnGoalContext && selectedUnitKey) {
       els.goalRollBtn.disabled = false;
-      els.goalHint.textContent = '방금 뽑힌 곡 난이도에 맞는 목표를 뽑아보세요.';
+      els.goalHint.textContent = t('goal_hint_ready');
     } else if (!selectedUnitKey) {
       els.goalRollBtn.disabled = true;
-      els.goalHint.textContent = '먼저 "내 단위"를 선택해주세요.';
+      els.goalHint.textContent = t('goal_hint_choose_unit');
     }
   }
 
@@ -2644,6 +3262,8 @@
 
   // ── 초기화 ───────────────────────────────────────────────
   (function init() {
+    currentLang = loadLang();
+
     history = loadHistory();
     renderHistory();
     currentPoolMode = loadPoolMode();
@@ -2684,6 +3304,12 @@
       excludePoolState.titles = new Set(savedExcludePool.titles || []);
     }
     renderExcludeStatus();
+
+    els.langToggle.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => setLang(btn.dataset.lang));
+    });
+
+    applyI18n();
 
     if (IS_ADMIN) {
       // 관리자 모드(?admin=1): 설정 버튼을 노출하고, 이전에 관리자가 지정해둔 시트가 있으면 그걸 사용.
