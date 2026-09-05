@@ -660,6 +660,10 @@
     <span class="filter-label">난이도</span>
     <div class="filter-cat-toggle" id="filterLevelToggle"></div>
   </div>
+  <div class="filter-row" id="filterGrade8Row" style="display:none;">
+    <span class="filter-label">8렙 서열등급</span>
+    <div class="filter-cat-toggle" id="filterGrade8Toggle"></div>
+  </div>
   <div class="filter-row" id="filterGrade9Row" style="display:none;">
     <span class="filter-label">9렙 서열등급</span>
     <div class="filter-cat-toggle" id="filterGrade9Toggle"></div>
@@ -783,6 +787,8 @@
     poolHardBtn: document.getElementById('poolHardBtn'),
     filterPanel: document.getElementById('filterPanel'),
     filterLevelToggle: document.getElementById('filterLevelToggle'),
+    filterGrade8Row: document.getElementById('filterGrade8Row'),
+    filterGrade8Toggle: document.getElementById('filterGrade8Toggle'),
     filterGrade9Row: document.getElementById('filterGrade9Row'),
     filterGrade9Toggle: document.getElementById('filterGrade9Toggle'),
     filterGrade10Row: document.getElementById('filterGrade10Row'),
@@ -816,11 +822,12 @@
   let history = [];        // 뽑은 기록
   let lastDrawnGoalContext = null; // 가장 최근 뽑힌 곡의 목표 뽑기용 난이도 정보 {isLevel10, grade}
 
-  // 필터 상태: 선택된 레벨(1~10) 집합 + 9렙/10렙 서열등급 집합 + 카테고리 집합.
+  // 필터 상태: 선택된 레벨(1~10) 집합 + 8렙/9렙/10렙 서열등급 집합 + 카테고리 집합.
   // 각 집합이 비어있으면 "그 축은 전체 허용"을 의미한다. 단, levels가 비어있으면 필터 자체가
   // 초기 상태(전체 허용)이므로 별도 처리한다.
   const filterState = {
     levels: new Set([1,2,3,4,5,6,7,8,9,10]), // 기본값: 전체 레벨 선택
+    grades8: new Set(),   // 비어있으면 8렙 전체(등급 무관) 허용
     grades9: new Set(),   // 비어있으면 9렙 전체(등급 무관) 허용
     grades10: new Set(),  // 비어있으면 10렙 전체(등급 무관) 허용
     categories: new Set(),
@@ -831,6 +838,7 @@
     try {
       localStorage.setItem(FILTER_KEY, JSON.stringify({
         levels: Array.from(filterState.levels),
+        grades8: Array.from(filterState.grades8),
         grades9: Array.from(filterState.grades9),
         grades10: Array.from(filterState.grades10),
         categories: Array.from(filterState.categories),
@@ -1374,6 +1382,11 @@
   function matchesDifficultyFilter(level, rank) {
     const n = Number(level);
     if (!filterState.levels.has(n)) return false;
+    if (n === 8) {
+      if (filterState.grades8.size === 0) return true;
+      const key = rank || '등급없음';
+      return filterState.grades8.has(key);
+    }
     if (n === 9) {
       if (filterState.grades9.size === 0) return true;
       const key = rank || '등급없음';
@@ -1384,7 +1397,7 @@
       const key = rank || '등급없음';
       return filterState.grades10.has(key);
     }
-    return true; // 1~8레벨은 등급 구분 없음
+    return true; // 1~7레벨은 등급 구분 없음
   }
 
   function matchesLevelFilter(song, mode) {
@@ -1534,7 +1547,8 @@
 
   // 서열등급 배경색 (기존 카드 배지 색상과 통일: 어려움=진녹, 오니=핑크, 우라=보라 계열과는 별개로
   // 등급 자체의 상대적 난이도를 은은하게 구분하기 위해 회색 계열 톤 차이만 준다)
-  const GRADE9_KEYS = ['하', '중하', '중', '중상', '상', '최상', '최상+', '등급없음'];  // 9렙은 졸업/졸업+ 없음
+  const GRADE8_KEYS = ['하', '중하', '중', '중상', '상', '최상', '등급없음'];   // 8렙은 최상+/졸업/졸업+ 없음
+  const GRADE9_KEYS = ['하', '중하', '중', '중상', '상', '최상', '등급없음'];   // 9렙도 최상+/졸업/졸업+ 없음
   const GRADE10_KEYS = ['하', '중하', '중', '중상', '상', '최상', '최상+', '졸업', '졸업+', '개인차', '등급없음'];
 
   // 레벨(1~10) 토글 버튼 생성. 모드(오니우라=최대10, 어려움=최대8)에 맞춰 표시 개수를 제한한다.
@@ -1572,10 +1586,27 @@
 
   // 9레벨/10레벨이 선택되어 있을 때만 해당 등급 토글 행을 보여준다 (어려움 모드에서는 항상 숨김).
   function syncGradeRowVisibility() {
+    const showGrade8 = currentPoolMode !== 'hard' && filterState.levels.has(8);
     const showGrade9 = currentPoolMode !== 'hard' && filterState.levels.has(9);
     const showGrade10 = currentPoolMode !== 'hard' && filterState.levels.has(10);
+    els.filterGrade8Row.style.display = showGrade8 ? 'flex' : 'none';
     els.filterGrade9Row.style.display = showGrade9 ? 'flex' : 'none';
     els.filterGrade10Row.style.display = showGrade10 ? 'flex' : 'none';
+  }
+
+  function buildGrade8Toggle() {
+    els.filterGrade8Toggle.innerHTML = GRADE8_KEYS.map((key) => `
+      <button type="button" class="filter-cat-btn" data-grade8="${key}">${escapeHtml(key)}</button>
+    `).join('');
+    els.filterGrade8Toggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.grade8;
+        if (filterState.grades8.has(key)) filterState.grades8.delete(key);
+        else filterState.grades8.add(key);
+        btn.classList.toggle('active', filterState.grades8.has(key));
+        applyFilterChange();
+      });
+    });
   }
 
   function buildGrade9Toggle() {
@@ -1608,6 +1639,11 @@
     });
   }
 
+  function syncGrade8ButtonsUi() {
+    els.filterGrade8Toggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
+      btn.classList.toggle('active', filterState.grades8.has(btn.dataset.grade8));
+    });
+  }
   function syncGrade9ButtonsUi() {
     els.filterGrade9Toggle.querySelectorAll('.filter-cat-btn').forEach((btn) => {
       btn.classList.toggle('active', filterState.grades9.has(btn.dataset.grade9));
@@ -1652,6 +1688,7 @@
     const parts = [];
     const maxLevel = currentPoolMode === 'hard' ? 8 : 10;
     parts.push(filterState.levels.size === maxLevel ? '레벨 전체' : `레벨 ${filterState.levels.size}개 선택`);
+    if (filterState.grades8.size > 0) parts.push(`8렙등급 ${filterState.grades8.size}개`);
     if (filterState.grades9.size > 0) parts.push(`9렙등급 ${filterState.grades9.size}개`);
     if (filterState.grades10.size > 0) parts.push(`10렙등급 ${filterState.grades10.size}개`);
     if (filterState.categories.size > 0) parts.push(`카테고리 ${filterState.categories.size}개 선택`);
@@ -1678,11 +1715,13 @@
   function resetFilters() {
     const maxLevel = currentPoolMode === 'hard' ? 8 : 10;
     filterState.levels = new Set(Array.from({ length: maxLevel }, (_, i) => i + 1));
+    filterState.grades8.clear();
     filterState.grades9.clear();
     filterState.grades10.clear();
     filterState.categories.clear();
     buildLevelToggle(currentPoolMode);
     syncCategoryButtonsUi();
+    syncGrade8ButtonsUi();
     syncGrade9ButtonsUi();
     syncGrade10ButtonsUi();
     applyFilterChange();
@@ -1905,12 +1944,14 @@
     els.poolHardBtn.classList.toggle('active', currentPoolMode === 'hard');
 
     buildCategoryFilterButtons();
+    buildGrade8Toggle();
     buildGrade9Toggle();
     buildGrade10Toggle();
     const savedFilter = loadFilterState();
     const maxLevel = currentPoolMode === 'hard' ? 8 : 10;
     if (savedFilter) {
       filterState.levels = new Set((savedFilter.levels && savedFilter.levels.length ? savedFilter.levels : Array.from({ length: maxLevel }, (_, i) => i + 1)).filter((n) => n <= maxLevel));
+      filterState.grades8 = new Set(savedFilter.grades8 || []);
       filterState.grades9 = new Set(savedFilter.grades9 || []);
       filterState.grades10 = new Set(savedFilter.grades10 || []);
       filterState.categories = new Set(savedFilter.categories || []);
@@ -1919,6 +1960,7 @@
     }
     buildLevelToggle(currentPoolMode);
     syncCategoryButtonsUi();
+    syncGrade8ButtonsUi();
     syncGrade9ButtonsUi();
     syncGrade10ButtonsUi();
     renderFilterStatus();
