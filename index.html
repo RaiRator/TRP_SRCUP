@@ -1416,6 +1416,23 @@
   const GRADE_ORDER = ['하', '중하', '중', '중상', '상', '최상', '최상+', '졸업', '졸업+'];
   function gradeIndex(g) { return GRADE_ORDER.indexOf(g); }
 
+  // 10단·인단위(현인~달인)의 인증 등급 범위. 뽑힌 곡의 등급이 이 범위(양끝 포함) 안이면
+  // "같음", 범위보다 낮으면 "쉬움", 범위보다 높으면(클리어 게이트 미달 시) "어려움"으로 판정한다.
+  // 한 단계 낮은 정도는 체감 난이도 차이가 크지 않다는 피드백을 반영해 단일 등급이 아니라
+  // 2단계 폭의 범위로 잡았다.
+  const RANK_GRADE_RANGE = {
+    '10단': ['중하', '중'],
+    '현인': ['중', '중상'],
+    '명인': ['중상', '상'],
+    '초인': ['상', '최상'],
+    '달인': ['최상', '최상+'],
+  };
+  function gradeRangeMinMax(unitName) {
+    const range = RANK_GRADE_RANGE[unitName];
+    if (!range) return null;
+    return [gradeIndex(range[0]), gradeIndex(range[1])];
+  }
+
   // "매우쉬움" 경계: 이 레벨(포함) 이하로 뽑히면, 쉬움보다 한 단계 더 낮춰서
   // 적/금 구분 없이 0 ~ 적합격 사이의 훨씬 관대한 범위로 목표를 잡는다.
   // 초단~7단은 이 단계 자체가 없다(그보다 훨씬 쉬운 곡을 만날 일이 사실상 없거나 의미가 없음).
@@ -1550,10 +1567,6 @@
 
   // ── 뽑힌 곡의 난이도를 "단위 인증 기준"과 비교 ───────────
   // 반환: 'same' | 'easier' | 'harder' | 'clear'
-  // 시트의 baseGrade("10상", "10최상" 등)에서 앞의 "10"을 떼고 순수 등급명만 추출
-  function normalizeBaseGrade(raw) {
-    return (raw || '').replace(/^10/, '').trim();
-  }
 
   function classifySongAgainstUnit(unitType, unitName, songLevel, songGrade) {
     const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
@@ -1566,9 +1579,8 @@
         if (veryEasyThreshold != null && songLevel <= veryEasyThreshold) return 'very_easy';
         return 'easier';
       }
-      // 10레벨 곡: 서열등급 비교
-      const rankRow3 = findRankUnitRow(unitName, '3곡');
-      const baseGrade = rankRow3 ? normalizeBaseGrade(rankRow3.baseGrade) : null;
+      // 10레벨 곡: 서열등급 비교 (인증 범위: RANK_GRADE_RANGE)
+      const [rangeMin, rangeMax] = gradeRangeMinMax(unitName) || [null, null];
       if (gate) {
         if (gate.rankGateInclusiveOnly) {
           if (songGrade === gate.rankGate) return 'clear';
@@ -1576,8 +1588,11 @@
           return 'clear';
         }
       }
-      if (baseGrade && songGrade === baseGrade) return 'same';
-      if (baseGrade && songGrade && gradeIndex(songGrade) < gradeIndex(baseGrade)) return 'easier';
+      if (songGrade && rangeMin != null) {
+        const gi = gradeIndex(songGrade);
+        if (gi >= rangeMin && gi <= rangeMax) return 'same';
+        if (gi < rangeMin) return 'easier';
+      }
       return 'harder'; // 인단위는 '한단계 어려움' 개념이 없으니 harder는 사실상 안 씀(clear가 대부분 흡수)
     }
 
@@ -1599,7 +1614,7 @@
       }
     }
 
-    // 10단은 숫자 레벨 범위가 아니라 "10중상" 단일 등급이 인증 기준이다.
+    // 10단은 숫자 레벨 범위가 아니라 서열등급 범위(중하~중)가 인증 기준이다.
     // (시트에는 '10단'이라는 이름의 행이 없고 '10단(1곡)'/'10단(3곡)'만 있으므로,
     //  findUnitRow('10단')을 시도하기 전에 반드시 이 분기에서 먼저 처리해야 한다.)
     if (unitName === '10단') {
@@ -1608,9 +1623,10 @@
         return 'easier';
       }
       if (!songGrade) return 'same'; // 등급 정보가 없으면 인증 기준과 같은 것으로 취급
-      const cmp = gradeIndex(songGrade) - gradeIndex('중상');
-      if (cmp === 0) return 'same';
-      if (cmp < 0) return 'easier';
+      const [rangeMin, rangeMax] = gradeRangeMinMax('10단');
+      const gi = gradeIndex(songGrade);
+      if (gi >= rangeMin && gi <= rangeMax) return 'same';
+      if (gi < rangeMin) return 'easier';
       return 'harder';
     }
 
@@ -1830,17 +1846,24 @@
     }
 
     // 가챠 뽑기 느낌의 글레어(빛 번쩍임) 이펙트를 목표 뽑기 버튼과 결과 그리드에 재생.
-    // requestAnimationFrame으로 한 프레임 늦춰서 클래스 제거→재추가가 모바일 브라우저에서도
-    // 확실히 리플로우를 거치도록 한다(즉시 재추가하면 브라우저가 동일 프레임으로 묶어
-    // 애니메이션을 재생하지 않는 경우가 있다).
+    // .goal-grid가 display:none -> grid로 바뀌는 시점과 애니메이션 클래스 부여가 같은 틱에
+    // 몰리면, 특히 모바일 브라우저에서 "요소가 막 나타나는 것"과 "재생해야 할 애니메이션"을
+    // 구분하지 못해 트랜지션을 건너뛰는 경우가 있다. 이를 피하기 위해:
+    //   1) 클래스를 지운 뒤 offsetWidth를 강제로 읽어 리플로우를 확정시키고
+    //   2) 그 다음 프레임(requestAnimationFrame)에서야 클래스를 다시 추가한다.
     els.goalRollBtn.classList.remove('gacha-flash');
     document.querySelectorAll('.goal-item').forEach((el) => {
       el.classList.remove('pop-in', 'gacha-glare');
     });
+    // 리플로우를 강제로 확정 (goalGrid의 display 전환도 여기서 함께 확정된다)
+    void els.goalGrid.offsetWidth;
+
     requestAnimationFrame(() => {
-      els.goalRollBtn.classList.add('gacha-flash');
-      document.querySelectorAll('.goal-item').forEach((el) => {
-        el.classList.add('pop-in', 'gacha-glare');
+      requestAnimationFrame(() => {
+        els.goalRollBtn.classList.add('gacha-flash');
+        document.querySelectorAll('.goal-item').forEach((el) => {
+          el.classList.add('pop-in', 'gacha-glare');
+        });
       });
     });
   }
