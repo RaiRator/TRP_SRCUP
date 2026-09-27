@@ -1375,6 +1375,7 @@
       situation_easier: '이 단위보다 쉬운 곡',
       situation_very_easy: '이 단위보다 매우 쉬운 곡',
       situation_harder: '이 단위보다 어려운 곡',
+      situation_very_hard: '이 단위보다 훨씬 어려운 곡',
       situation_clear: '이 단위로는 도전 자체가 목표인 곡',
       diff_hard: '어려움',
       diff_oni: '오니',
@@ -1501,6 +1502,7 @@
       situation_easier: 'A song easier than this rank',
       situation_very_easy: 'A song much easier than this rank',
       situation_harder: 'A song harder than this rank',
+      situation_very_hard: 'A song much harder than this rank',
       situation_clear: 'A song where simply clearing it is the goal for this rank',
       diff_hard: 'Hard',
       diff_oni: 'Oni',
@@ -1627,6 +1629,7 @@
       situation_easier: 'この段位より簡単な曲',
       situation_very_easy: 'この段位よりかなり簡単な曲',
       situation_harder: 'この段位より難しい曲',
+      situation_very_hard: 'この段位よりかなり難しい曲',
       situation_clear: 'この段位では完走自体が目標となる曲',
       diff_hard: 'むずかしい',
       diff_oni: '表',
@@ -2044,6 +2047,15 @@
     '현인': 8, '명인': 8, '초인': 9, '달인': 9,
   };
 
+  // "매우어려움" 경계: 이 등급이 정확히 뽑히면(클리어 게이트 바로 아래 단계), 어려움보다
+  // 한 단계 더 후하게 목표를 잡는다(적단위 2.0배~5.0배). 인단위 4종에만 적용된다.
+  const VERY_HARD_GRADE = {
+    '10단': '최상',
+    '현인': '최상+',
+    '명인': '졸업',
+    '초인': '졸업+',
+  };
+
   async function fetchSheetRows(sheetId, gid) {
     const url = buildCsvUrl(sheetId, gid);
     const res = await fetch(url, { cache: 'no-store' });
@@ -2208,6 +2220,9 @@
           return 'clear';
         }
       }
+      // 매우어려움: 클리어 게이트 바로 아래 단계의 등급이 정확히 뽑힌 경우
+      const veryHardGrade = VERY_HARD_GRADE[unitName];
+      if (veryHardGrade && songGrade === veryHardGrade) return 'very_hard';
       if (songGrade && rangeMin != null) {
         const gi = gradeIndex(songGrade);
         if (gi >= rangeMin && gi <= rangeMax) return 'same';
@@ -2243,6 +2258,9 @@
         return 'easier';
       }
       if (!songGrade) return 'same'; // 등급 정보가 없으면 인증 기준과 같은 것으로 취급
+      // 매우어려움: 클리어 게이트(최상+) 바로 아래 단계인 "최상"이 정확히 뽑힌 경우
+      const veryHardGrade = VERY_HARD_GRADE['10단'];
+      if (veryHardGrade && songGrade === veryHardGrade) return 'very_hard';
       const [rangeMin, rangeMax] = gradeRangeMinMax('10단');
       const gi = gradeIndex(songGrade);
       if (gi >= rangeMin && gi <= rangeMax) return 'same';
@@ -2310,6 +2328,15 @@
           clearMin: clearGold,
           clearMax: clearPass * 3,
         };
+      case 'very_hard':
+        // 클리어 게이트 바로 아래 단계(10단=최상/현인=최상+/명인=졸업/초인=졸업+)에만 적용.
+        // 적단위 기준 2.0배~5.0배, 불가는 기존 harder와 동일 공식(금합격불가~적합격불가×3)을 유지한다.
+        return {
+          missMin: Math.round(missPass * 2.0),
+          missMax: Math.round(missPass * 5.0),
+          clearMin: clearGold,
+          clearMax: clearPass * 3,
+        };
       default: return null;
     }
   }
@@ -2318,11 +2345,11 @@
     const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
 
     if (isRankUnit) {
-      // 어려움: 3곡 값을 기준값으로 취급
-      if (situation === 'harder') {
+      // 어려움/매우어려움: 3곡 값을 기준값으로 취급
+      if (situation === 'harder' || situation === 'very_hard') {
         const row3 = findRankUnitRow(unitName, '3곡');
         if (!row3) return null;
-        const base = computeBaseRange('harder', row3.missPass, row3.missGold, row3.clearPass, row3.clearGold, true);
+        const base = computeBaseRange(situation, row3.missPass, row3.missGold, row3.clearPass, row3.clearGold, true);
         return applyUnitTypeCorrection(base, unitType);
       }
       // same(3곡 기준)/easier·very_easy(미만 기준)
@@ -2334,9 +2361,9 @@
     }
 
     // 10단은 시트에 "10단(1곡)"/"10단(3곡)" 두 행으로 존재한다.
-    // easier·very_easy(하/중하/중) -> 1곡 표, same(중상)/harder(상·최상) -> 3곡 표를 기준으로 사용한다.
+    // easier·very_easy(하/중하/중) -> 1곡 표, same(중상)/harder(상·최상 미만)/very_hard(최상) -> 3곡 표를 기준으로 사용한다.
     const lookupUnitName = unitName === '10단'
-      ? (situation === 'same' || situation === 'harder' ? '10단(3곡)' : '10단(1곡)')
+      ? (situation === 'same' || situation === 'harder' || situation === 'very_hard' ? '10단(3곡)' : '10단(1곡)')
       : unitName;
 
     const row = findUnitRow(lookupUnitName);
