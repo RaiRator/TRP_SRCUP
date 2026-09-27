@@ -792,37 +792,89 @@
     gap: 10px;
   }
   .goal-item {
-    background: var(--panel-alt);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 10px;
+    position: relative;
+    background: linear-gradient(160deg, var(--panel-alt), #1a1d26);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     text-align: center;
+    overflow: hidden;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
   }
   .goal-item.pop-in { animation: popIn .22s ease; }
   .goal-label {
     font-size: 11px;
     color: var(--text-dim);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 700;
   }
   .goal-value {
-    font-size: 16px;
-    font-weight: 800;
+    font-size: 17px;
+    font-weight: 900;
     color: var(--text);
     word-break: keep-all;
+    line-height: 1.25;
   }
-  .goal-value.tier-easy { color: #2ecc71; }   /* 쉬움: 초록 */
-  .goal-value.tier-mid  { color: #3aa0e3; }   /* 적정: 파랑 */
-  .goal-value.tier-hard { color: #e3364a; }   /* 어려움: 빨강 */
+
+  /* ── 티어별 위압감 있는 강조(테두리+발광+살짝 확대) ─────── */
+  .goal-value.tier-easy  { color: #3ee07a; }
+  .goal-value.tier-mid   { color: #4fb2ff; }
+  .goal-value.tier-hard  { color: #ff4d6a; }
+
+  .goal-item.item-tier-easy {
+    border-color: #3ee07a;
+    box-shadow: 0 0 14px rgba(62,224,122,0.35), inset 0 0 18px rgba(62,224,122,0.08);
+  }
+  .goal-item.item-tier-mid {
+    border-color: #4fb2ff;
+    box-shadow: 0 0 14px rgba(79,178,255,0.35), inset 0 0 18px rgba(79,178,255,0.08);
+  }
+  .goal-item.item-tier-hard {
+    border-color: #ff4d6a;
+    box-shadow: 0 0 16px rgba(255,77,106,0.45), inset 0 0 18px rgba(255,77,106,0.1);
+    transform: scale(1.02);
+  }
+
+  /* ── 동더풀콤보: 가/불가 카드 전부 무지개 애니메이션 ─────── */
+  .goal-value.rainbow-perfect {
+    background: linear-gradient(90deg, #ffd23f, #3ee07a, #4fb2ff, #ff4d6a, #ffd23f);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: rainbowShift 2.2s linear infinite;
+  }
+  .goal-item.item-rainbow {
+    border-color: transparent;
+    background: linear-gradient(160deg, var(--panel-alt), #1a1d26) padding-box,
+                linear-gradient(90deg, #ffd23f, #3ee07a, #4fb2ff, #ff4d6a, #ffd23f) border-box;
+    border-width: 2px;
+    background-size: 100% 100%, 300% 100%;
+    animation: rainbowBorderShift 2.2s linear infinite;
+    box-shadow: 0 0 20px rgba(255,210,63,0.4);
+  }
+  @keyframes rainbowShift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+  @keyframes rainbowBorderShift {
+    0% { background-position: 0 0, 0% 50%; }
+    100% { background-position: 0 0, 300% 50%; }
+  }
+
+  /* ── 황금 풀콤보: 불가 카드만 강조 ───────────────────── */
+  .goal-value.gold-clear { color: #ffd23f; }
+  .goal-item.item-gold {
+    border-color: #ffd23f;
+    box-shadow: 0 0 18px rgba(255,210,63,0.5), inset 0 0 18px rgba(255,210,63,0.12);
+  }
 
   /* ── 가챠 글레어 이펙트 ───────────────────────────── */
-  .goal-item.gacha-glare {
-    position: relative;
-    overflow: hidden;
-  }
   .goal-item.gacha-glare::after {
     content: '';
     position: absolute;
@@ -833,28 +885,32 @@
     background: linear-gradient(
       100deg,
       rgba(255,255,255,0) 0%,
-      rgba(255,255,255,0.55) 50%,
+      rgba(255,255,255,0.65) 50%,
       rgba(255,255,255,0) 100%
     );
     transform: skewX(-20deg);
-    animation: gachaGlareSweep .7s ease-out;
+    animation: gachaGlareSweep .8s ease-out;
+    pointer-events: none;
+    z-index: 2;
   }
   @keyframes gachaGlareSweep {
     0%   { left: -60%; opacity: 0; }
-    15%  { opacity: 1; }
+    12%  { opacity: 1; }
     100% { left: 130%; opacity: 0; }
   }
   #goalRollBtn.gacha-flash {
-    animation: gachaFlashPulse .5s ease-out;
+    animation: gachaFlashPulse .6s ease-out;
   }
   @keyframes gachaFlashPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(240,180,41,0.7); }
-    60%  { box-shadow: 0 0 0 14px rgba(240,180,41,0); }
-    100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); }
+    0%   { box-shadow: 0 0 0 0 rgba(240,180,41,0.8); transform: scale(1); }
+    40%  { transform: scale(1.05); }
+    60%  { box-shadow: 0 0 0 16px rgba(240,180,41,0); }
+    100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); transform: scale(1); }
   }
   @media (prefers-reduced-motion: reduce) {
     .goal-item.gacha-glare::after { animation: none; display: none; }
     #goalRollBtn.gacha-flash { animation: none; }
+    .goal-value.rainbow-perfect, .goal-item.item-rainbow { animation: none; }
   }
 
   /* ── 최근 뽑은 곡 / 목록 상태 ─────────────────────── */
@@ -1593,13 +1649,33 @@
   }
 
   // 적단위 기준으로 (같음/쉬움/매우쉬움/어려움) min~max를 계산.
-  // hardMultiplier: '어려움' 상황에서 적합격에 곱할 배수 (숫자단위=2, 인단위=3).
-  function computeBaseRange(situation, missPass, missGold, clearPass, clearGold, hardMultiplier) {
+  // isRankUnit: 인단위(현인~달인)인지 여부 — 같음/쉬움/어려움의 가(오차) 공식이 숫자단위와 다르다.
+  // 불가(clear) 공식은 숫자단위/인단위 구분 없이 항상 동일(전역 통일)하다.
+  function computeBaseRange(situation, missPass, missGold, clearPass, clearGold, isRankUnit) {
     switch (situation) {
-      case 'same':      return { missMin: missPass, missMax: Math.round(missPass * 1.5), clearMin: 0, clearMax: clearPass };
-      case 'easier':     return { missMin: missGold, missMax: missPass, clearMin: 0, clearMax: clearGold };
-      case 'very_easy':  return { missMin: 0, missMax: missPass, clearMin: 0, clearMax: clearGold };
-      case 'harder':     return { missMin: missPass, missMax: missPass * hardMultiplier, clearMin: clearGold, clearMax: clearPass * 2 };
+      case 'same':
+        return {
+          missMin: isRankUnit ? Math.round(missPass * 1.5) : missPass,
+          missMax: isRankUnit ? Math.round(missPass * 2.0) : Math.round(missPass * 1.5),
+          clearMin: 0,
+          clearMax: clearPass * 2,
+        };
+      case 'easier':
+        return {
+          missMin: missGold,
+          missMax: isRankUnit ? Math.round(missPass * 1.5) : missPass,
+          clearMin: 0,
+          clearMax: clearGold,
+        };
+      case 'very_easy':
+        return { missMin: 0, missMax: missPass, clearMin: 0, clearMax: clearGold };
+      case 'harder':
+        return {
+          missMin: isRankUnit ? Math.round(missPass * 1.5) : missPass,
+          missMax: isRankUnit ? Math.round(missPass * 3.0) : missPass * 2,
+          clearMin: clearGold,
+          clearMax: clearPass * 3,
+        };
       default: return null;
     }
   }
@@ -1608,18 +1684,18 @@
     const isRankUnit = RANK_UNIT_ORDER.includes(unitName);
 
     if (isRankUnit) {
-      // 어려움: 3곡 값을 기준값으로 취급, 인단위이므로 배수는 3
+      // 어려움: 3곡 값을 기준값으로 취급
       if (situation === 'harder') {
         const row3 = findRankUnitRow(unitName, '3곡');
         if (!row3) return null;
-        const base = computeBaseRange('harder', row3.missPass, row3.missGold, row3.clearPass, row3.clearGold, 3);
+        const base = computeBaseRange('harder', row3.missPass, row3.missGold, row3.clearPass, row3.clearGold, true);
         return applyUnitTypeCorrection(base, unitType);
       }
       // same(3곡 기준)/easier·very_easy(미만 기준)
       const kind = situation === 'same' ? '3곡' : '미만';
       const row = findRankUnitRow(unitName, kind);
       if (!row) return null;
-      const base = computeBaseRange(situation, row.missPass, row.missGold, row.clearPass, row.clearGold, 3);
+      const base = computeBaseRange(situation, row.missPass, row.missGold, row.clearPass, row.clearGold, true);
       return applyUnitTypeCorrection(base, unitType);
     }
 
@@ -1631,7 +1707,7 @@
 
     const row = findUnitRow(lookupUnitName);
     if (!row) return null;
-    const base = computeBaseRange(situation, row.missPass, row.missGold, row.clearPass, row.clearGold, 2);
+    const base = computeBaseRange(situation, row.missPass, row.missGold, row.clearPass, row.clearGold, false);
     return applyUnitTypeCorrection(base, unitType);
   }
 
@@ -1645,13 +1721,24 @@
     return min + Math.floor(Math.random() * (max - min + 1));
   }
 
-  // 뽑힌 가(미스) 값이 min~max 구간에서 어느 1/3에 속하는지로 쉬움/적정/어려움을 판정.
+  // 뽑힌 값이 min~max 구간에서 어느 1/3에 속하는지로 쉬움/적정/어려움을 판정.
+  // 가(오차)/불가/플레이 수는 모두 "숫자가 작을수록 어렵다"는 원칙을 따른다.
+  //  - 가/불가: 허용치가 적을수록(=실수 여유가 없을수록) 어려움
+  //  - 플레이 수: 시도 기회가 적을수록 어려움
+  // 따라서 구간의 낮은 쪽(1/3 지점 이하)이 어려움, 높은 쪽이 쉬움이 된다.
   function difficultyTierForValue(value, min, max) {
     if (max <= min) return 'mid';
     const ratio = (value - min) / (max - min);
-    if (ratio < 1 / 3) return 'easy';
+    if (ratio < 1 / 3) return 'hard';
     if (ratio < 2 / 3) return 'mid';
-    return 'hard';
+    return 'easy';
+  }
+
+  // 플레이 수(1~4)의 티어: 1=어려움, 2~3=적정, 4=쉬움 (고정 매핑)
+  function difficultyTierForPlayCount(playCount) {
+    if (playCount === 1) return 'hard';
+    if (playCount === 4) return 'easy';
+    return 'mid';
   }
 
   const TIER_LABEL = { easy: '쉬움', mid: '적정', hard: '어려움' };
@@ -1664,6 +1751,15 @@
     clear: '이 단위로는 도전 자체가 목표인 곡',
   };
 
+  // .goal-value 요소의 부모 .goal-item에 위압감/특수효과 클래스를 함께 부여한다.
+  // (:has() 선택자는 구형 모바일 브라우저에서 지원되지 않으므로 JS로 직접 부여한다.)
+  function markGoalItemStyle(valueEl, itemClass) {
+    const item = valueEl.closest('.goal-item');
+    if (!item) return;
+    item.classList.remove('item-tier-easy', 'item-tier-mid', 'item-tier-hard', 'item-rainbow', 'item-gold');
+    if (itemClass) item.classList.add(itemClass);
+  }
+
   function rollGoal() {
     if (!lastDrawnGoalContext || !selectedUnitKey) return;
     const [unitType, unitName] = selectedUnitKey.split(':');
@@ -1671,15 +1767,23 @@
 
     const situation = classifySongAgainstUnit(unitType, unitName, songLevel, songGrade);
     const playCount = pickPlayCount();
+    const playTier = difficultyTierForPlayCount(playCount);
 
     els.goalGrid.style.display = 'grid';
-    // 매번 새로 뽑을 때 이전 티어 색상 클래스를 먼저 지운다.
-    els.goalMissValue.classList.remove('tier-easy', 'tier-mid', 'tier-hard');
+    // 매번 새로 뽑을 때 이전 티어/특수효과 클래스를 먼저 지운다.
+    [els.goalPlayValue, els.goalMissValue, els.goalClearValue].forEach((el) => {
+      el.classList.remove('tier-easy', 'tier-mid', 'tier-hard', 'rainbow-perfect', 'gold-clear');
+    });
+
+    els.goalPlayValue.textContent = `${playCount}플레이 이내`;
+    els.goalPlayValue.classList.add(`tier-${playTier}`);
+    markGoalItemStyle(els.goalPlayValue, `item-tier-${playTier}`);
 
     if (situation === 'clear') {
-      els.goalPlayValue.textContent = `${playCount}플레이 이내`;
       els.goalMissValue.textContent = '-';
       els.goalClearValue.textContent = '클리어';
+      markGoalItemStyle(els.goalMissValue, null);
+      markGoalItemStyle(els.goalClearValue, null);
       els.goalHint.textContent = `${SITUATION_LABEL.clear}. 완주(클리어) 자체가 목표입니다. 다시 누르면 새로운 목표가 나옵니다.`;
     } else {
       const range = computeGoalRange(unitType, unitName, situation);
@@ -1690,27 +1794,54 @@
       const missMin = Math.floor(range.missMin);
       const missMax = Math.floor(range.missMax);
       const missCount = pickIntInRangeMinMax(missMin, missMax);
-      const clearCount = pickIntInRangeMinMax(Math.floor(range.clearMin), Math.floor(range.clearMax));
+      let clearCount = pickIntInRangeMinMax(Math.floor(range.clearMin), Math.floor(range.clearMax));
 
-      // 뽑힌 가 값이 min~max 구간의 어느 1/3에 속하는지로 쉬움/적정/어려움을 표시 (초록/파랑/빨강)
-      const tier = difficultyTierForValue(missCount, missMin, missMax);
-      els.goalMissValue.classList.add(`tier-${tier}`);
+      if (missCount === 0) {
+        // "동더풀콤보": 가 0(전량)이 뽑히면 불가도 강제로 0(풀콤보)으로 맞추고,
+        // 가/불가 카드 둘 다 무지개 애니메이션으로 표시한다.
+        clearCount = 0;
+        els.goalMissValue.textContent = '전량 (동더풀콤보)';
+        els.goalClearValue.textContent = '풀콤보 (동더풀콤보)';
+        els.goalMissValue.classList.add('rainbow-perfect');
+        els.goalClearValue.classList.add('rainbow-perfect');
+        markGoalItemStyle(els.goalMissValue, 'item-rainbow');
+        markGoalItemStyle(els.goalClearValue, 'item-rainbow');
+      } else {
+        const missTier = difficultyTierForValue(missCount, missMin, missMax);
+        els.goalMissValue.classList.add(`tier-${missTier}`);
+        els.goalMissValue.textContent = `가 ${missCount}개 이내 (${TIER_LABEL[missTier]})`;
+        markGoalItemStyle(els.goalMissValue, `item-tier-${missTier}`);
 
-      els.goalPlayValue.textContent = `${playCount}플레이 이내`;
-      els.goalMissValue.textContent = `가 ${missCount}개 이내 (${TIER_LABEL[tier]})`;
-      els.goalClearValue.textContent = clearCount === 0 ? '풀콤보' : `불가 ${clearCount}개 이내`;
+        if (clearCount === 0) {
+          // 불가만 0(풀콤보)이 나온 경우: 불가 카드만 황금색으로 강조
+          els.goalClearValue.textContent = '풀콤보';
+          els.goalClearValue.classList.add('gold-clear');
+          markGoalItemStyle(els.goalClearValue, 'item-gold');
+        } else {
+          const clearMin = Math.floor(range.clearMin);
+          const clearMax = Math.floor(range.clearMax);
+          const clearTier = difficultyTierForValue(clearCount, clearMin, clearMax);
+          els.goalClearValue.classList.add(`tier-${clearTier}`);
+          els.goalClearValue.textContent = `불가 ${clearCount}개 이내 (${TIER_LABEL[clearTier]})`;
+          markGoalItemStyle(els.goalClearValue, `item-tier-${clearTier}`);
+        }
+      }
       els.goalHint.textContent = `${SITUATION_LABEL[situation]}. 다시 누르면 새로운 목표가 나옵니다.`;
     }
 
-    // 가챠 뽑기 느낌의 글레어(빛 번쩍임) 이펙트를 목표 뽑기 버튼과 결과 그리드에 재생
+    // 가챠 뽑기 느낌의 글레어(빛 번쩍임) 이펙트를 목표 뽑기 버튼과 결과 그리드에 재생.
+    // requestAnimationFrame으로 한 프레임 늦춰서 클래스 제거→재추가가 모바일 브라우저에서도
+    // 확실히 리플로우를 거치도록 한다(즉시 재추가하면 브라우저가 동일 프레임으로 묶어
+    // 애니메이션을 재생하지 않는 경우가 있다).
     els.goalRollBtn.classList.remove('gacha-flash');
-    void els.goalRollBtn.offsetWidth;
-    els.goalRollBtn.classList.add('gacha-flash');
-
     document.querySelectorAll('.goal-item').forEach((el) => {
       el.classList.remove('pop-in', 'gacha-glare');
-      void el.offsetWidth;
-      el.classList.add('pop-in', 'gacha-glare');
+    });
+    requestAnimationFrame(() => {
+      els.goalRollBtn.classList.add('gacha-flash');
+      document.querySelectorAll('.goal-item').forEach((el) => {
+        el.classList.add('pop-in', 'gacha-glare');
+      });
     });
   }
 
