@@ -874,43 +874,25 @@
     box-shadow: 0 0 18px rgba(255,210,63,0.5), inset 0 0 18px rgba(255,210,63,0.12);
   }
 
-  /* ── 가챠 글레어 이펙트 ───────────────────────────── */
-  .goal-item.gacha-glare::after {
-    content: '';
+  /* ── 가챠 이펙트: 실제 시각 효과는 JS(Web Animations API)로 직접 실행한다.
+     CSS 클래스 토글 + ::after 애니메이션 방식은 브라우저에 따라 재트리거가 씹히는
+     경우가 있어, 여기서는 이펙트용 실제 DOM 레이어(goal-item 안에 JS로 삽입)에 필요한
+     기본 배치만 정의한다. */
+  .gacha-glare-layer {
     position: absolute;
     top: 0;
-    left: -60%;
+    left: 0;
     width: 40%;
     height: 100%;
     background: linear-gradient(
       100deg,
       rgba(255,255,255,0) 0%,
-      rgba(255,255,255,0.65) 50%,
+      rgba(255,255,255,0.75) 50%,
       rgba(255,255,255,0) 100%
     );
-    transform: skewX(-20deg);
-    animation: gachaGlareSweep .8s ease-out;
+    transform: translateX(-150%) skewX(-20deg);
     pointer-events: none;
-    z-index: 2;
-  }
-  @keyframes gachaGlareSweep {
-    0%   { left: -60%; opacity: 0; }
-    12%  { opacity: 1; }
-    100% { left: 130%; opacity: 0; }
-  }
-  #goalRollBtn.gacha-flash {
-    animation: gachaFlashPulse .6s ease-out;
-  }
-  @keyframes gachaFlashPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(240,180,41,0.8); transform: scale(1); }
-    40%  { transform: scale(1.05); }
-    60%  { box-shadow: 0 0 0 16px rgba(240,180,41,0); }
-    100% { box-shadow: 0 0 0 0 rgba(240,180,41,0); transform: scale(1); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .goal-item.gacha-glare::after { animation: none; display: none; }
-    #goalRollBtn.gacha-flash { animation: none; }
-    .goal-value.rainbow-perfect, .goal-item.item-rainbow { animation: none; }
+    z-index: 5;
   }
 
   /* ── 최근 뽑은 곡 / 목록 상태 ─────────────────────── */
@@ -1845,27 +1827,72 @@
       els.goalHint.textContent = `${SITUATION_LABEL[situation]}. 다시 누르면 새로운 목표가 나옵니다.`;
     }
 
-    // 가챠 뽑기 느낌의 글레어(빛 번쩍임) 이펙트를 목표 뽑기 버튼과 결과 그리드에 재생.
-    // .goal-grid가 display:none -> grid로 바뀌는 시점과 애니메이션 클래스 부여가 같은 틱에
-    // 몰리면, 특히 모바일 브라우저에서 "요소가 막 나타나는 것"과 "재생해야 할 애니메이션"을
-    // 구분하지 못해 트랜지션을 건너뛰는 경우가 있다. 이를 피하기 위해:
-    //   1) 클래스를 지운 뒤 offsetWidth를 강제로 읽어 리플로우를 확정시키고
-    //   2) 그 다음 프레임(requestAnimationFrame)에서야 클래스를 다시 추가한다.
-    els.goalRollBtn.classList.remove('gacha-flash');
-    document.querySelectorAll('.goal-item').forEach((el) => {
-      el.classList.remove('pop-in', 'gacha-glare');
-    });
-    // 리플로우를 강제로 확정 (goalGrid의 display 전환도 여기서 함께 확정된다)
-    void els.goalGrid.offsetWidth;
+    playGachaEffect();
+  }
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        els.goalRollBtn.classList.add('gacha-flash');
-        document.querySelectorAll('.goal-item').forEach((el) => {
-          el.classList.add('pop-in', 'gacha-glare');
-        });
+  // 가챠 뽑기 느낌의 이펙트를 element.animate()(Web Animations API)로 직접 실행한다.
+  // CSS 클래스 토글 + ::after 애니메이션 방식은 브라우저에 따라 재트리거가 씹히는 경우가
+  // 있어, JS가 애니메이션 시작을 직접 보장하는 이 방식으로 확실하게 재생한다.
+  function playGachaEffect() {
+    try {
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) return;
+
+      // 1) 목표 뽑기 버튼: 골드색 펄스(box-shadow 링 + 살짝 확대)
+      if (els.goalRollBtn && typeof els.goalRollBtn.animate === 'function') {
+        els.goalRollBtn.animate(
+          [
+            { boxShadow: '0 0 0 0 rgba(240,180,41,0.8)', transform: 'scale(1)' },
+            { boxShadow: '0 0 0 10px rgba(240,180,41,0.35)', transform: 'scale(1.06)', offset: 0.4 },
+            { boxShadow: '0 0 0 16px rgba(240,180,41,0)', transform: 'scale(1)' },
+          ],
+          { duration: 550, easing: 'ease-out' }
+        );
+      }
+
+      // 2) 각 결과 카드: 살짝 확대되며 나타나는 팝인 + 빛이 스치는 글레어 바(실제 DOM 요소)
+      document.querySelectorAll('.goal-item').forEach((item) => {
+        try {
+          if (typeof item.animate === 'function') {
+            item.animate(
+              [
+                { transform: 'scale(0.94)', opacity: 0.6 },
+                { transform: 'scale(1.03)', opacity: 1, offset: 0.5 },
+                { transform: 'scale(1)', opacity: 1 },
+              ],
+              { duration: 320, easing: 'ease-out' }
+            );
+          }
+
+          // 글레어 바를 실제 DOM 요소로 생성해서 스윕시킨다 (가상요소보다 훨씬 안정적으로 재생됨).
+          const glare = document.createElement('div');
+          glare.className = 'gacha-glare-layer';
+          item.appendChild(glare);
+          if (typeof glare.animate === 'function') {
+            const anim = glare.animate(
+              [
+                { transform: 'translateX(-150%) skewX(-20deg)', opacity: 0 },
+                { transform: 'translateX(-80%) skewX(-20deg)', opacity: 1, offset: 0.15 },
+                { transform: 'translateX(280%) skewX(-20deg)', opacity: 0 },
+              ],
+              { duration: 750, easing: 'ease-out' }
+            );
+            anim.onfinish = () => glare.remove();
+            // 혹시 onfinish가 호출되지 않는 예외 상황을 대비한 안전장치
+            setTimeout(() => { if (glare.parentNode) glare.remove(); }, 1000);
+          } else {
+            // Web Animations API 자체를 지원하지 않는 아주 오래된 환경을 위한 보조 처리
+            setTimeout(() => { if (glare.parentNode) glare.remove(); }, 750);
+          }
+        } catch (innerErr) {
+          console.error('가챠 카드 이펙트 실행 중 오류:', innerErr);
+        }
       });
-    });
+    } catch (err) {
+      // 이펙트가 실패해도 목표 뽑기 결과 표시 자체에는 영향이 없어야 하므로 조용히 무시하되,
+      // 콘솔에는 남겨서 디버깅할 수 있게 한다.
+      console.error('가챠 이펙트 실행 중 오류:', err);
+    }
   }
 
   function setStatus(msg, kind) {
