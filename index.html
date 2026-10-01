@@ -2307,15 +2307,15 @@
     switch (situation) {
       case 'same':
         return {
-          missMin: isRankUnit ? Math.round(missPass * 1.5) : missPass,
-          missMax: isRankUnit ? Math.round(missPass * 2.0) : Math.round(missPass * 1.5),
+          missMin: isRankUnit ? Math.round(missPass * 2.0) : missPass,
+          missMax: isRankUnit ? Math.round(missPass * 3.0) : Math.round(missPass * 1.5),
           clearMin: 0,
           clearMax: clearPass * 2,
         };
       case 'easier':
         return {
           missMin: missGold,
-          missMax: isRankUnit ? Math.round(missPass * 1.5) : missPass,
+          missMax: isRankUnit ? Math.round(missPass * 2.0) : missPass,
           clearMin: 0,
           clearMax: clearGold,
         };
@@ -2323,16 +2323,16 @@
         return { missMin: 0, missMax: missPass, clearMin: 0, clearMax: clearGold };
       case 'harder':
         return {
-          missMin: isRankUnit ? Math.round(missPass * 1.5) : missPass,
-          missMax: isRankUnit ? Math.round(missPass * 3.0) : missPass * 2,
+          missMin: isRankUnit ? Math.round(missPass * 3.0) : missPass,
+          missMax: isRankUnit ? Math.round(missPass * 4.0) : missPass * 2,
           clearMin: clearGold,
           clearMax: clearPass * 3,
         };
       case 'very_hard':
         // 클리어 게이트 바로 아래 단계(10단=최상/현인=최상+/명인=졸업/초인=졸업+)에만 적용.
-        // 적단위 기준 2.0배~5.0배, 불가는 기존 harder와 동일 공식(금합격불가~적합격불가×3)을 유지한다.
+        // 적단위 기준 4.0배~5.0배, 불가는 기존 harder와 동일 공식(금합격불가~적합격불가×3)을 유지한다.
         return {
-          missMin: Math.round(missPass * 2.0),
+          missMin: Math.round(missPass * 4.0),
           missMax: Math.round(missPass * 5.0),
           clearMin: clearGold,
           clearMax: clearPass * 3,
